@@ -2,10 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, Clock, User, Calendar, Heart, Search } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { MapPin, Clock, User, Calendar, Heart, Search, Plus, Trash2, X, Image as ImageIcon } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import heroImagePCH from "@/assets/inspo-hero-pch.jpg";
 import heroImageSmokies from "@/assets/inspo-hero-smokies.jpg";
 import heroImageSouthwest from "@/assets/inspo-hero-southwest.jpg";
@@ -89,6 +92,37 @@ const sampleTrips: RoadTripPost[] = [
 const InspoPage = () => {
   const { addFavorite, isFavorite } = useFavorites();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [userPosts, setUserPosts] = useState<RoadTripPost[]>([]);
+  const [newPost, setNewPost] = useState({
+    title: "",
+    description: "",
+    duration: "",
+    distance: "",
+    author: "",
+    heroImage: "",
+    highlights: [""],
+    stops: [{ location: "", description: "" }],
+  });
+
+  // Load user posts from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("inspo-posts");
+    if (stored) {
+      try {
+        setUserPosts(JSON.parse(stored));
+      } catch (error) {
+        console.error("Error loading posts:", error);
+      }
+    }
+  }, []);
+
+  // Save user posts to localStorage
+  useEffect(() => {
+    if (userPosts.length > 0) {
+      localStorage.setItem("inspo-posts", JSON.stringify(userPosts));
+    }
+  }, [userPosts]);
 
   const handleSaveFavorite = (stop: { location: string; description: string }, tripTitle: string) => {
     const favoriteId = `${tripTitle}-${stop.location}`.replace(/\s+/g, '-').toLowerCase();
@@ -108,8 +142,101 @@ const InspoPage = () => {
     toast.success(`Added ${stop.location} to favorites!`);
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setNewPost({ ...newPost, heroImage: event.target.result as string });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addHighlight = () => {
+    setNewPost({ ...newPost, highlights: [...newPost.highlights, ""] });
+  };
+
+  const updateHighlight = (index: number, value: string) => {
+    const newHighlights = [...newPost.highlights];
+    newHighlights[index] = value;
+    setNewPost({ ...newPost, highlights: newHighlights });
+  };
+
+  const removeHighlight = (index: number) => {
+    setNewPost({ ...newPost, highlights: newPost.highlights.filter((_, i) => i !== index) });
+  };
+
+  const addStop = () => {
+    setNewPost({ ...newPost, stops: [...newPost.stops, { location: "", description: "" }] });
+  };
+
+  const updateStop = (index: number, field: "location" | "description", value: string) => {
+    const newStops = [...newPost.stops];
+    newStops[index][field] = value;
+    setNewPost({ ...newPost, stops: newStops });
+  };
+
+  const removeStop = (index: number) => {
+    setNewPost({ ...newPost, stops: newPost.stops.filter((_, i) => i !== index) });
+  };
+
+  const handleSavePost = () => {
+    if (!newPost.title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+    if (!newPost.description.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+
+    const post: RoadTripPost = {
+      id: Date.now().toString(),
+      title: newPost.title,
+      description: newPost.description,
+      duration: newPost.duration || "N/A",
+      distance: newPost.distance || "N/A",
+      author: newPost.author || "Anonymous",
+      date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+      readTime: "5 min read",
+      heroImage: newPost.heroImage || heroImagePCH,
+      highlights: newPost.highlights.filter(h => h.trim()),
+      stops: newPost.stops.filter(s => s.location.trim()),
+    };
+
+    setUserPosts([post, ...userPosts]);
+    setNewPost({
+      title: "",
+      description: "",
+      duration: "",
+      distance: "",
+      author: "",
+      heroImage: "",
+      highlights: [""],
+      stops: [{ location: "", description: "" }],
+    });
+    setIsCreating(false);
+    toast.success("Blog post created!");
+  };
+
+  const deletePost = (id: string) => {
+    setUserPosts(userPosts.filter(p => p.id !== id));
+    toast.success("Post deleted");
+  };
+
+  // Combine user posts and sample trips
+  const allTrips = [...userPosts, ...sampleTrips];
+
   // Filter trips based on search query
-  const filteredTrips = sampleTrips.filter((trip) => {
+  const filteredTrips = allTrips.filter((trip) => {
     if (!searchQuery.trim()) return true;
     
     const query = searchQuery.toLowerCase();
@@ -128,11 +255,179 @@ const InspoPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-6xl">
+        {/* Create Post Dialog */}
+        <Dialog open={isCreating} onOpenChange={setIsCreating}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Blog Post</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              {/* Basic Info */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  placeholder="Pacific Coast Highway Adventure"
+                  value={newPost.title}
+                  onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description *</Label>
+                <Textarea
+                  id="description"
+                  placeholder="A breathtaking journey along California's iconic coastline..."
+                  value={newPost.description}
+                  onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="duration">Duration</Label>
+                  <Input
+                    id="duration"
+                    placeholder="7 Days"
+                    value={newPost.duration}
+                    onChange={(e) => setNewPost({ ...newPost, duration: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="distance">Distance</Label>
+                  <Input
+                    id="distance"
+                    placeholder="600 miles"
+                    value={newPost.distance}
+                    onChange={(e) => setNewPost({ ...newPost, distance: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="author">Author</Label>
+                <Input
+                  id="author"
+                  placeholder="Your name"
+                  value={newPost.author}
+                  onChange={(e) => setNewPost({ ...newPost, author: e.target.value })}
+                />
+              </div>
+
+              {/* Hero Image */}
+              <div className="space-y-2">
+                <Label>Hero Image</Label>
+                <div className="flex items-center gap-4">
+                  <Button variant="outline" className="gap-2" asChild>
+                    <label htmlFor="hero-upload" className="cursor-pointer">
+                      <ImageIcon className="w-4 h-4" />
+                      Upload Image
+                      <input
+                        id="hero-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                    </label>
+                  </Button>
+                  {newPost.heroImage && (
+                    <span className="text-sm text-muted-foreground">Image uploaded</span>
+                  )}
+                </div>
+                {newPost.heroImage && (
+                  <img src={newPost.heroImage} alt="Preview" className="w-full h-48 object-cover rounded-md mt-2" />
+                )}
+              </div>
+
+              {/* Highlights */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Highlights</Label>
+                  <Button size="sm" variant="outline" onClick={addHighlight}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+                {newPost.highlights.map((highlight, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="Golden Gate Bridge"
+                      value={highlight}
+                      onChange={(e) => updateHighlight(index, e.target.value)}
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removeHighlight(index)}
+                      disabled={newPost.highlights.length === 1}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Stops */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Stops</Label>
+                  <Button size="sm" variant="outline" onClick={addStop}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Stop
+                  </Button>
+                </div>
+                {newPost.stops.map((stop, index) => (
+                  <div key={index} className="space-y-2 p-4 border rounded-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Stop {index + 1}</span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeStop(index)}
+                        disabled={newPost.stops.length === 1}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <Input
+                      placeholder="Location"
+                      value={stop.location}
+                      onChange={(e) => updateStop(index, "location", e.target.value)}
+                    />
+                    <Textarea
+                      placeholder="Description"
+                      value={stop.description}
+                      onChange={(e) => updateStop(index, "description", e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-4">
+                <Button onClick={handleSavePost}>Create Post</Button>
+                <Button variant="outline" onClick={() => setIsCreating(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <div className="mb-12">
           <div className="text-center mb-8">
-            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-              Road Trip Inspiration
-            </h1>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <h1 className="text-4xl sm:text-5xl font-bold text-foreground">
+                Road Trip Inspiration
+              </h1>
+              <Button onClick={() => setIsCreating(true)} size="lg" className="gap-2">
+                <Plus className="w-5 h-5" />
+                New Post
+              </Button>
+            </div>
             <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto">
               Discover epic journeys and plan your next adventure with our curated collection of road trip stories
             </p>
@@ -186,6 +481,20 @@ const InspoPage = () => {
                     <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 drop-shadow-lg">
                       {trip.title}
                     </h2>
+                    {/* Delete button for user posts */}
+                    {userPosts.some(p => p.id === trip.id) && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-4 right-4"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePost(trip.id);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 
