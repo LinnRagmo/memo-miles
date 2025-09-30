@@ -1,9 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, User, Calendar, Heart } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { MapPin, Clock, User, Calendar, Heart, Search } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { toast } from "sonner";
+import { useState } from "react";
 import heroImagePCH from "@/assets/inspo-hero-pch.jpg";
 import heroImageSmokies from "@/assets/inspo-hero-smokies.jpg";
 import heroImageSouthwest from "@/assets/inspo-hero-southwest.jpg";
@@ -86,6 +88,7 @@ const sampleTrips: RoadTripPost[] = [
 
 const InspoPage = () => {
   const { addFavorite, isFavorite } = useFavorites();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleSaveFavorite = (stop: { location: string; description: string }, tripTitle: string) => {
     const favoriteId = `${tripTitle}-${stop.location}`.replace(/\s+/g, '-').toLowerCase();
@@ -105,20 +108,61 @@ const InspoPage = () => {
     toast.success(`Added ${stop.location} to favorites!`);
   };
 
+  // Filter trips based on search query
+  const filteredTrips = sampleTrips.filter((trip) => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      trip.title.toLowerCase().includes(query) ||
+      trip.description.toLowerCase().includes(query) ||
+      trip.author.toLowerCase().includes(query) ||
+      trip.highlights.some(h => h.toLowerCase().includes(query)) ||
+      trip.stops.some(s => 
+        s.location.toLowerCase().includes(query) || 
+        s.description.toLowerCase().includes(query)
+      )
+    );
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-6xl">
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-            Road Trip Inspiration
-          </h1>
-          <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto">
-            Discover epic journeys and plan your next adventure with our curated collection of road trip stories
-          </p>
+        <div className="mb-12">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
+              Road Trip Inspiration
+            </h1>
+            <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto">
+              Discover epic journeys and plan your next adventure with our curated collection of road trip stories
+            </p>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search trips, destinations, or highlights..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-4 h-12 text-base border-2 focus:border-primary"
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-12">
-          {sampleTrips.map((trip) => (
+        {filteredTrips.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground text-lg mb-2">No trips found matching "{searchQuery}"</p>
+            <Button variant="outline" onClick={() => setSearchQuery("")}>
+              Clear search
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-12">
+            {filteredTrips.map((trip) => (
             <article key={trip.id} className="group">
               <Card className="border-2 border-border hover:border-primary/50 transition-all duration-300 overflow-hidden">
                 {/* Hero Image */}
@@ -221,6 +265,7 @@ const InspoPage = () => {
             </article>
           ))}
         </div>
+        )}
       </div>
     </div>
   );
