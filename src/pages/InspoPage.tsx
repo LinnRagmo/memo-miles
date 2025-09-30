@@ -1,6 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, User, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Clock, User, Calendar, Heart } from "lucide-react";
+import { useFavorites } from "@/contexts/FavoritesContext";
+import { toast } from "sonner";
 import heroImagePCH from "@/assets/inspo-hero-pch.jpg";
 import heroImageSmokies from "@/assets/inspo-hero-smokies.jpg";
 import heroImageSouthwest from "@/assets/inspo-hero-southwest.jpg";
@@ -82,6 +85,26 @@ const sampleTrips: RoadTripPost[] = [
 ];
 
 const InspoPage = () => {
+  const { addFavorite, isFavorite } = useFavorites();
+
+  const handleSaveFavorite = (stop: { location: string; description: string }, tripTitle: string) => {
+    const favoriteId = `${tripTitle}-${stop.location}`.replace(/\s+/g, '-').toLowerCase();
+    
+    if (isFavorite(favoriteId)) {
+      toast.info("Already in favorites");
+      return;
+    }
+
+    addFavorite({
+      id: favoriteId,
+      name: stop.location,
+      description: stop.description,
+      tripTitle: tripTitle,
+    });
+
+    toast.success(`Added ${stop.location} to favorites!`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-6xl">
@@ -170,11 +193,24 @@ const InspoPage = () => {
                             {index + 1}
                           </div>
                           <div className="flex-1 pt-1">
-                            <h4 className="font-bold text-foreground text-lg mb-1 flex items-center gap-2">
-                              <MapPin className="w-4 h-4 text-primary" />
-                              {stop.location}
-                            </h4>
-                            <p className="text-muted-foreground leading-relaxed">{stop.description}</p>
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <h4 className="font-bold text-foreground text-lg mb-1 flex items-center gap-2">
+                                  <MapPin className="w-4 h-4 text-primary" />
+                                  {stop.location}
+                                </h4>
+                                <p className="text-muted-foreground leading-relaxed">{stop.description}</p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="gap-2 hover:bg-primary/10 hover:text-primary"
+                                onClick={() => handleSaveFavorite(stop, trip.title)}
+                              >
+                                <Heart className={`w-4 h-4 ${isFavorite(`${trip.title}-${stop.location}`.replace(/\s+/g, '-').toLowerCase()) ? 'fill-primary text-primary' : ''}`} />
+                                Save
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}

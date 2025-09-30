@@ -3,6 +3,8 @@ import { Trip, TripDay, Stop } from "@/types/trip";
 import TripHeader from "@/components/TripHeader";
 import TripTable from "@/components/TripTable";
 import DayDetailModal from "@/components/DayDetailModal";
+import { PlanSidebar } from "@/components/PlanSidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { fetchSunriseSunset, parseDate } from "@/lib/sunriseSunset";
 
@@ -247,28 +249,55 @@ const Index = () => {
     toast.success("Event added successfully!");
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <TripHeader
-        title={trip.title}
-        startDate={trip.startDate}
-        endDate={trip.endDate}
-        onAddDay={handleAddDay}
-      />
-      
-      <TripTable
-        days={trip.days}
-        onDayClick={handleDayClick}
-        onUpdateDay={handleUpdateDay}
-      />
+  const handleAddFavoriteToDay = (place: { location: string; description: string; coordinates?: [number, number] }) => {
+    if (!selectedDay) {
+      toast.error("Please select a day first");
+      return;
+    }
 
-      <DayDetailModal
-        day={selectedDay}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAddEvent={handleAddEvent}
-      />
-    </div>
+    const newStop: Omit<Stop, "id"> = {
+      time: "",
+      location: place.location,
+      type: "activity",
+      notes: place.description,
+      coordinates: place.coordinates,
+    };
+
+    handleAddEvent(selectedDay.id, newStop);
+  };
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-subtle">
+        <PlanSidebar onAddToDay={handleAddFavoriteToDay} />
+        
+        <div className="flex-1 flex flex-col">
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-background/50 backdrop-blur">
+            <SidebarTrigger />
+          </div>
+
+          <TripHeader
+            title={trip.title}
+            startDate={trip.startDate}
+            endDate={trip.endDate}
+            onAddDay={handleAddDay}
+          />
+          
+          <TripTable
+            days={trip.days}
+            onDayClick={handleDayClick}
+            onUpdateDay={handleUpdateDay}
+          />
+
+          <DayDetailModal
+            day={selectedDay}
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onAddEvent={handleAddEvent}
+          />
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
