@@ -1,4 +1,4 @@
-import { Calendar, Plus } from "lucide-react";
+import { Calendar, Plus, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TripHeaderProps {
@@ -6,9 +6,10 @@ interface TripHeaderProps {
   startDate: string;
   endDate: string;
   onAddDay: () => void;
+  onShowTotalRoute: () => void;
 }
 
-const TripHeader = ({ title, startDate, endDate, onAddDay }: TripHeaderProps) => {
+const TripHeader = ({ title, startDate, endDate, onAddDay, onShowTotalRoute }: TripHeaderProps) => {
   return (
     <header className="bg-card border-b border-border shadow-soft sticky top-0 z-10">
       <div className="container mx-auto px-6 py-4">
@@ -23,10 +24,16 @@ const TripHeader = ({ title, startDate, endDate, onAddDay }: TripHeaderProps) =>
             </div>
           </div>
           
-          <Button onClick={onAddDay} className="shadow-soft">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Day
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={onShowTotalRoute} variant="outline" className="shadow-soft">
+              <Map className="w-4 h-4 mr-2" />
+              Show Total Route
+            </Button>
+            <Button onClick={onAddDay} className="shadow-soft">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Day
+            </Button>
+          </div>
         </div>
       </div>
     </header>

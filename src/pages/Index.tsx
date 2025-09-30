@@ -3,6 +3,7 @@ import { Trip, TripDay, Stop } from "@/types/trip";
 import TripHeader from "@/components/TripHeader";
 import TripTable from "@/components/TripTable";
 import DayDetailModal from "@/components/DayDetailModal";
+import TotalRouteModal from "@/components/TotalRouteModal";
 import { PlanSidebar } from "@/components/PlanSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
@@ -159,6 +160,7 @@ const Index = () => {
   const [trip, setTrip] = useState<Trip>(sampleTrip);
   const [selectedDay, setSelectedDay] = useState<TripDay | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTotalRouteOpen, setIsTotalRouteOpen] = useState(false);
 
   // Fetch sunrise/sunset times for all days on mount
   useEffect(() => {
@@ -281,6 +283,7 @@ const Index = () => {
             startDate={trip.startDate}
             endDate={trip.endDate}
             onAddDay={handleAddDay}
+            onShowTotalRoute={() => setIsTotalRouteOpen(true)}
           />
           
           <TripTable
@@ -294,6 +297,12 @@ const Index = () => {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onAddEvent={handleAddEvent}
+          />
+
+          <TotalRouteModal
+            trip={trip}
+            isOpen={isTotalRouteOpen}
+            onClose={() => setIsTotalRouteOpen(false)}
           />
         </div>
       </div>
