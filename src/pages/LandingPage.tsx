@@ -30,7 +30,7 @@ const LandingPage = () => {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: `url(${backgroundImage})`,
-          filter: "brightness(0.6)",
+          filter: "brightness(0.85) saturate(1.1)",
         }}
       />
 
@@ -43,7 +43,7 @@ const LandingPage = () => {
             <Card
               key={box.title}
               onClick={() => navigate(box.route)}
-              className="cursor-pointer bg-white/95 dark:bg-black/95 backdrop-blur-sm border-2 border-foreground hover:scale-105 transition-transform duration-200 p-12 flex flex-col items-center justify-center text-center min-h-[280px]"
+              className="cursor-pointer bg-white/90 dark:bg-white/10 backdrop-blur-md border border-white/40 hover:scale-105 hover:bg-white/95 dark:hover:bg-white/15 transition-all duration-200 p-12 flex flex-col items-center justify-center text-center min-h-[280px] shadow-lg"
             >
               <h2 className="text-4xl font-bold text-foreground mb-4">{box.title}</h2>
               <p className="text-foreground/70 text-lg">{box.description}</p>
