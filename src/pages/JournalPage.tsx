@@ -6,10 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Image as ImageIcon, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import PhotoAlbumView from "@/components/PhotoAlbumView";
 import samplePhoto1 from "@/assets/journal-sample-1.jpg";
 import samplePhoto2 from "@/assets/journal-sample-2.jpg";
 import samplePhoto3 from "@/assets/journal-sample-3.jpg";
 import samplePhoto4 from "@/assets/journal-sample-4.jpg";
+import desertPhoto1 from "@/assets/journal-desert-1.jpg";
+import desertPhoto2 from "@/assets/journal-desert-2.jpg";
+import desertPhoto3 from "@/assets/journal-desert-3.jpg";
+import mountainPhoto1 from "@/assets/journal-mountains-1.jpg";
+import mountainPhoto2 from "@/assets/journal-mountains-2.jpg";
+import mountainPhoto3 from "@/assets/journal-mountains-3.jpg";
 
 interface JournalEntry {
   id: string;
@@ -17,20 +24,54 @@ interface JournalEntry {
   title: string;
   notes: string;
   photos: string[];
+  photoCaptions?: string[];
 }
 
-const templateEntry: JournalEntry = {
-  id: "template-1",
-  date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-  title: "Pacific Coast Highway - Day 3",
-  notes: "The drive from Big Sur to Santa Barbara was absolutely breathtaking. We stopped at multiple scenic overlooks and watched the sunset from a clifftop viewpoint. The winding roads hugged the coastline, offering stunning ocean views at every turn.\n\nHighlight of the day was finding a secluded beach where we had a campfire dinner under the stars. The sound of waves crashing against the rocks was therapeutic. Can't wait to come back here someday.",
-  photos: [samplePhoto1, samplePhoto2, samplePhoto3, samplePhoto4],
-};
+const templateEntries: JournalEntry[] = [
+  {
+    id: "template-1",
+    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    title: "Pacific Coast Highway - Day 3",
+    notes: "The drive from Big Sur to Santa Barbara was absolutely breathtaking. We stopped at multiple scenic overlooks and watched the sunset from a clifftop viewpoint.",
+    photos: [samplePhoto1, samplePhoto2, samplePhoto3, samplePhoto4],
+    photoCaptions: [
+      "The winding coastal highway offered endless views of the Pacific Ocean",
+      "Sunset over the cliffs - one of the most beautiful moments of the trip",
+      "Found the perfect spot to park and take in the scenery",
+      "Campfire under the stars to end an amazing day"
+    ],
+  },
+  {
+    id: "template-2",
+    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    title: "Southwest Desert Adventure",
+    notes: "Exploring the red rock country was like visiting another planet. The vastness of the desert and the vibrant colors at sunset made this an unforgettable experience.",
+    photos: [desertPhoto1, desertPhoto2, desertPhoto3],
+    photoCaptions: [
+      "Monument Valley at golden hour - the red rocks glowed like fire",
+      "Stopped at a classic Route 66 diner for lunch and nostalgia",
+      "Desert sunset with saguaro cacti silhouettes against the purple sky"
+    ],
+  },
+  {
+    id: "template-3",
+    date: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+    title: "Rocky Mountain High",
+    notes: "The mountain roads took us through pristine alpine forests and past crystal-clear lakes. Every turn revealed a new postcard-perfect view.",
+    photos: [mountainPhoto1, mountainPhoto2, mountainPhoto3],
+    photoCaptions: [
+      "Mirror-like reflection at dawn - the lake was perfectly still",
+      "Hiked to this hidden waterfall deep in the forest",
+      "Alpine meadows bursting with wildflowers in full bloom"
+    ],
+  },
+];
 
 const JournalPage = () => {
   const { toast } = useToast();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [newEntry, setNewEntry] = useState({
     title: "",
     notes: "",
@@ -42,9 +83,9 @@ const JournalPage = () => {
     const stored = localStorage.getItem("journal-entries");
     if (stored) {
       const parsed = JSON.parse(stored);
-      setEntries(parsed.length > 0 ? parsed : [templateEntry]);
+      setEntries(parsed.length > 0 ? parsed : templateEntries);
     } else {
-      setEntries([templateEntry]);
+      setEntries(templateEntries);
     }
   }, []);
 
@@ -137,6 +178,19 @@ const JournalPage = () => {
 
   return (
     <div className="container mx-auto px-6 py-8">
+      <PhotoAlbumView
+        isOpen={selectedEntry !== null}
+        onClose={() => setSelectedEntry(null)}
+        title={selectedEntry?.title || ""}
+        date={selectedEntry?.date || ""}
+        photos={
+          selectedEntry?.photos.map((photo, index) => ({
+            src: photo,
+            caption: selectedEntry.photoCaptions?.[index] || `Photo ${index + 1}`,
+          })) || []
+        }
+      />
+
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-foreground mb-2">Travel Journal</h1>
@@ -247,7 +301,11 @@ const JournalPage = () => {
           </Card>
         ) : (
           entries.map((entry) => (
-            <Card key={entry.id} className="border-2 border-border">
+            <Card
+              key={entry.id}
+              className="border-2 border-border hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => setSelectedEntry(entry)}
+            >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
@@ -265,7 +323,10 @@ const JournalPage = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => deleteEntry(entry.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteEntry(entry.id);
+                    }}
                     className="text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="w-4 h-4" />
