@@ -23,118 +23,73 @@ const getEventIcon = (type: string) => {
 const TripTable = ({ days, onDayClick, onUpdateDay }: TripTableProps) => {
   return (
     <div className="container mx-auto px-6 py-6">
-      {days.map((day, dayIndex) => (
-        <div key={day.id} className="mb-8 bg-card rounded-lg overflow-hidden border-2 border-border">
-          {/* Day Header */}
-          <div
-            onClick={() => onDayClick(day)}
-            className="bg-muted hover:bg-accent cursor-pointer transition-colors border-b-2 border-border px-6 py-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-base font-bold text-foreground">
-                  {day.date}
-                </span>
-                <span className="text-sm text-muted-foreground font-medium">
-                  Day {dayIndex + 1}
-                </span>
+      <div className="overflow-x-auto">
+        <div className="inline-flex gap-4 min-w-full pb-4">
+          {days.map((day, dayIndex) => (
+            <div
+              key={day.id}
+              className="flex-shrink-0 w-[320px] bg-card rounded-lg border-2 border-border overflow-hidden"
+            >
+              {/* Day Header */}
+              <div
+                onClick={() => onDayClick(day)}
+                className="bg-foreground text-background cursor-pointer hover:bg-foreground/90 transition-colors px-4 py-4 border-b-2 border-border"
+              >
+                <div className="flex flex-col gap-1">
+                  <span className="text-lg font-bold">
+                    {day.date}
+                  </span>
+                  <span className="text-sm opacity-80">
+                    Day {dayIndex + 1} • {day.stops.length} events
+                  </span>
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">
-                {day.stops.length} events
+
+              {/* Events List */}
+              <div className="p-4 space-y-3">
+                {day.stops.map((stop) => (
+                  <div
+                    key={stop.id}
+                    className="bg-muted/50 rounded-md p-3 border border-border hover:bg-muted transition-colors"
+                  >
+                    {/* Time */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-bold text-foreground">{stop.time}</span>
+                    </div>
+
+                    {/* Event/Activity */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-muted-foreground">
+                        {getEventIcon(stop.type)}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">
+                        {stop.location}
+                      </span>
+                    </div>
+
+                    {/* Driving Time */}
+                    {stop.type === "drive" && day.drivingTime && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <Car className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">{day.drivingTime}</span>
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {stop.notes && (
+                      <div className="flex items-start gap-2 mt-2 pt-2 border-t border-border">
+                        <StickyNote className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <span className="text-xs text-muted-foreground">{stop.notes}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-
-          {/* Column-based Events Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-foreground text-background border-b-2 border-border">
-                  <th className="px-4 py-3 text-left text-sm font-bold uppercase tracking-wider w-[140px] sticky left-0 bg-foreground z-10">
-                    Field
-                  </th>
-                  {day.stops.map((stop, index) => (
-                    <th
-                      key={stop.id}
-                      className="px-4 py-3 text-center text-sm font-bold uppercase tracking-wider min-w-[180px]"
-                    >
-                      Event {index + 1}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {/* Time Row */}
-                <tr className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-sm text-foreground sticky left-0 bg-card z-10 border-r border-border">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      Time
-                    </div>
-                  </td>
-                  {day.stops.map((stop) => (
-                    <td key={stop.id} className="px-4 py-3 text-center text-sm font-medium text-foreground">
-                      {stop.time}
-                    </td>
-                  ))}
-                </tr>
-
-                {/* Event/Activity Row */}
-                <tr className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-sm text-foreground sticky left-0 bg-card z-10 border-r border-border">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-muted-foreground" />
-                      Event / Activity
-                    </div>
-                  </td>
-                  {day.stops.map((stop) => (
-                    <td key={stop.id} className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-muted-foreground">
-                          {getEventIcon(stop.type)}
-                        </span>
-                        <span className="text-sm font-medium text-foreground">
-                          {stop.location}
-                        </span>
-                      </div>
-                    </td>
-                  ))}
-                </tr>
-
-                {/* Driving Time Row */}
-                <tr className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-sm text-foreground sticky left-0 bg-card z-10 border-r border-border">
-                    <div className="flex items-center gap-2">
-                      <Car className="w-4 h-4 text-muted-foreground" />
-                      Driving Time
-                    </div>
-                  </td>
-                  {day.stops.map((stop) => (
-                    <td key={stop.id} className="px-4 py-3 text-center text-sm text-foreground">
-                      {stop.type === "drive" ? day.drivingTime : "-"}
-                    </td>
-                  ))}
-                </tr>
-
-                {/* Notes Row */}
-                <tr className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-sm text-foreground sticky left-0 bg-card z-10 border-r border-border">
-                    <div className="flex items-center gap-2">
-                      <StickyNote className="w-4 h-4 text-muted-foreground" />
-                      Notes
-                    </div>
-                  </td>
-                  {day.stops.map((stop) => (
-                    <td key={stop.id} className="px-4 py-3 text-center text-sm text-muted-foreground">
-                      {stop.notes || "-"}
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 };
