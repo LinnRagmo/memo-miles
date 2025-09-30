@@ -5,7 +5,7 @@ import TripTable from "@/components/TripTable";
 import DayDetailModal from "@/components/DayDetailModal";
 import { toast } from "sonner";
 
-// Sample data
+// Sample data with coordinates for map display
 const sampleTrip: Trip = {
   id: "1",
   title: "Pacific Coast Highway Road Trip",
@@ -24,28 +24,32 @@ const sampleTrip: Trip = {
           time: "9:00 AM",
           location: "San Francisco - Fisherman's Wharf",
           type: "activity",
-          notes: "Breakfast and coffee, explore the area"
+          notes: "Breakfast and coffee, explore the area",
+          coordinates: [-122.4177, 37.8080]
         },
         {
           id: "stop-2",
           time: "11:00 AM",
           location: "Drive to Monterey via Highway 1",
           type: "drive",
-          notes: "Scenic coastal drive, 2.5 hours"
+          notes: "Scenic coastal drive, 2.5 hours",
+          coordinates: [-121.8947, 36.6002]
         },
         {
           id: "stop-3",
           time: "1:30 PM",
           location: "Monterey Bay Aquarium",
           type: "activity",
-          notes: "Lunch and visit the famous aquarium"
+          notes: "Lunch and visit the famous aquarium",
+          coordinates: [-121.9018, 36.6177]
         },
         {
           id: "stop-4",
           time: "5:00 PM",
-          location: "Hotel check-in",
+          location: "Hotel check-in - Monterey Plaza",
           type: "stop",
-          notes: "Monterey Plaza Hotel & Spa"
+          notes: "Monterey Plaza Hotel & Spa",
+          coordinates: [-121.8949, 36.6050]
         }
       ]
     },
@@ -60,28 +64,40 @@ const sampleTrip: Trip = {
           id: "stop-1",
           time: "8:00 AM",
           location: "Breakfast at hotel",
-          type: "stop"
+          type: "stop",
+          coordinates: [-121.8949, 36.6050]
         },
         {
           id: "stop-2",
           time: "9:30 AM",
-          location: "17-Mile Drive",
+          location: "17-Mile Drive Entrance",
           type: "drive",
-          notes: "Stop at scenic viewpoints along the way"
+          notes: "Stop at scenic viewpoints along the way",
+          coordinates: [-121.9308, 36.5833]
         },
         {
           id: "stop-3",
-          time: "12:00 PM",
-          location: "Carmel-by-the-Sea",
+          time: "11:00 AM",
+          location: "Lone Cypress",
           type: "activity",
-          notes: "Lunch and explore the charming town"
+          notes: "Iconic photo spot",
+          coordinates: [-121.9647, 36.5686]
         },
         {
           id: "stop-4",
+          time: "12:00 PM",
+          location: "Carmel-by-the-Sea",
+          type: "activity",
+          notes: "Lunch and explore the charming town",
+          coordinates: [-121.9233, 36.5552]
+        },
+        {
+          id: "stop-5",
           time: "4:00 PM",
           location: "Point Lobos State Reserve",
           type: "activity",
-          notes: "Hiking and wildlife viewing"
+          notes: "Hiking and wildlife viewing",
+          coordinates: [-121.9499, 36.5184]
         }
       ]
     },
@@ -96,28 +112,40 @@ const sampleTrip: Trip = {
           id: "stop-1",
           time: "8:30 AM",
           location: "Depart Monterey",
-          type: "drive"
+          type: "drive",
+          coordinates: [-121.8949, 36.6050]
         },
         {
           id: "stop-2",
           time: "10:00 AM",
           location: "Bixby Bridge",
           type: "activity",
-          notes: "Iconic photo opportunity"
+          notes: "Iconic photo opportunity",
+          coordinates: [-121.9021, 36.3716]
         },
         {
           id: "stop-3",
           time: "12:30 PM",
           location: "Nepenthe Restaurant",
           type: "stop",
-          notes: "Lunch with amazing ocean views"
+          notes: "Lunch with amazing ocean views",
+          coordinates: [-121.8692, 36.2694]
         },
         {
           id: "stop-4",
           time: "2:30 PM",
           location: "McWay Falls",
           type: "activity",
-          notes: "Short hike to waterfall viewpoint"
+          notes: "Short hike to waterfall viewpoint",
+          coordinates: [-121.6711, 36.1597]
+        },
+        {
+          id: "stop-5",
+          time: "5:00 PM",
+          location: "Ragged Point",
+          type: "stop",
+          notes: "End of day destination",
+          coordinates: [-121.3142, 35.7795]
         }
       ]
     }
