@@ -43,10 +43,10 @@ const LandingPage = () => {
             <Card
               key={box.title}
               onClick={() => navigate(box.route)}
-              className="cursor-pointer bg-white/90 dark:bg-white/10 backdrop-blur-md border border-white/40 hover:scale-105 hover:bg-white/95 dark:hover:bg-white/15 transition-all duration-200 p-12 flex flex-col items-center justify-center text-center min-h-[280px] shadow-lg"
+              className="cursor-pointer bg-white/90 dark:bg-white/10 backdrop-blur-md border border-white/40 hover:scale-105 hover:bg-white/95 dark:hover:bg-white/15 transition-all duration-200 p-8 flex flex-col items-center justify-center text-center min-h-[200px] shadow-lg"
             >
-              <h2 className="text-4xl font-bold text-foreground mb-4">{box.title}</h2>
-              <p className="text-foreground/70 text-lg">{box.description}</p>
+              <h2 className="text-3xl font-bold text-foreground mb-3">{box.title}</h2>
+              <p className="text-foreground/70 text-base">{box.description}</p>
             </Card>
           ))}
         </div>
