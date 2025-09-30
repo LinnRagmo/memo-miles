@@ -1,9 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X, MapPin } from "lucide-react";
 import { Trip } from "@/types/trip";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 interface TotalRouteModalProps {
   trip: Trip;
@@ -15,9 +18,35 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
+  const [mapboxToken, setMapboxToken] = useState<string>(() => {
+    return localStorage.getItem("mapboxToken") || "";
+  });
+  const [tokenInput, setTokenInput] = useState("");
+  const [isMapLoading, setIsMapLoading] = useState(true);
+  const { toast } = useToast();
+
+  const handleTokenSubmit = () => {
+    if (!tokenInput.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid Mapbox token",
+        variant: "destructive",
+      });
+      return;
+    }
+    localStorage.setItem("mapboxToken", tokenInput.trim());
+    setMapboxToken(tokenInput.trim());
+    toast({
+      title: "Success",
+      description: "Mapbox token saved successfully",
+    });
+  };
 
   useEffect(() => {
-    if (!isOpen || !mapContainer.current) return;
+    if (!isOpen || !mapContainer.current || !mapboxToken) {
+      setIsMapLoading(false);
+      return;
+    }
 
     // Get all stops with coordinates from all days
     const allStops = trip.days.flatMap(day => 
@@ -27,11 +56,14 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
       }))
     );
 
-    if (allStops.length === 0) return;
+    if (allStops.length === 0) {
+      setIsMapLoading(false);
+      return;
+    }
 
     // Initialize map
-    const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "pk.eyJ1IjoibG92YWJsZS1kZW1vIiwiYSI6ImNtNWN5dnEzaDAyeHcya3M1cnQ0dHU5djAifQ.37LNMhTd2dKmwalzcSHOlQ";
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+    setIsMapLoading(true);
+    mapboxgl.accessToken = mapboxToken;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -45,6 +77,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
     // Wait for map to load before adding route
     map.current.on("load", () => {
       if (!map.current) return;
+      setIsMapLoading(false);
 
       // Create route coordinates array
       const coordinates = allStops.map(stop => stop.coordinates!);
@@ -124,8 +157,9 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
       markers.current = [];
       map.current?.remove();
       map.current = null;
+      setIsMapLoading(false);
     };
-  }, [isOpen, trip]);
+  }, [isOpen, trip, mapboxToken]);
 
   const allStops = trip.days.flatMap(day => 
     day.stops.filter(stop => stop.coordinates)
@@ -153,7 +187,54 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
         </DialogHeader>
 
         <div className="flex-1 relative">
-          <div ref={mapContainer} className="absolute inset-0" />
+          {!mapboxToken ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted/20 p-8">
+              <div className="max-w-md w-full bg-card p-6 rounded-lg shadow-lg border border-border">
+                <h3 className="text-lg font-semibold mb-2 text-foreground">Mapbox Token Required</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  To display the route map, please enter your Mapbox public token. You can find it at{" "}
+                  <a
+                    href="https://account.mapbox.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    mapbox.com
+                  </a>
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="pk.ey..."
+                    value={tokenInput}
+                    onChange={(e) => setTokenInput(e.target.value)}
+                    className="flex-1"
+                    onKeyDown={(e) => e.key === "Enter" && handleTokenSubmit()}
+                  />
+                  <Button onClick={handleTokenSubmit}>Save</Button>
+                </div>
+              </div>
+            </div>
+          ) : allStops.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
+              <div className="text-center p-8">
+                <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No stops with coordinates to display on the map.</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div ref={mapContainer} className="absolute inset-0" />
+              {isMapLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Loading map...</p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
