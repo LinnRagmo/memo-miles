@@ -36,7 +36,10 @@ const LandingPage = () => {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center gap-12 px-6 max-w-6xl w-full">
-        <h1 className="text-7xl font-bold text-white tracking-tight">MEMOmiles</h1>
+        <div className="text-center">
+          <h1 className="text-7xl font-bold text-white tracking-tight mb-3">MEMOmiles</h1>
+          <p className="text-xl text-white/90 font-medium tracking-wide">Where roadtrip plans become stories.</p>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
           {boxes.map((box) => (
