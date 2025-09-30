@@ -83,6 +83,7 @@ const JournalPage = () => {
     title: "",
     notes: "",
     photos: [] as string[],
+    photoCaptions: [] as string[],
   });
 
   // Load entries from localStorage on mount, or use template if empty
@@ -144,6 +145,7 @@ const JournalPage = () => {
           setNewEntry((prev) => ({
             ...prev,
             photos: [...prev.photos, event.target!.result as string],
+            photoCaptions: [...prev.photoCaptions, ""],
           }));
         }
       };
@@ -155,7 +157,19 @@ const JournalPage = () => {
     setNewEntry((prev) => ({
       ...prev,
       photos: prev.photos.filter((_, i) => i !== index),
+      photoCaptions: prev.photoCaptions.filter((_, i) => i !== index),
     }));
+  };
+
+  const updatePhotoCaption = (index: number, caption: string) => {
+    setNewEntry((prev) => {
+      const newCaptions = [...prev.photoCaptions];
+      newCaptions[index] = caption;
+      return {
+        ...prev,
+        photoCaptions: newCaptions,
+      };
+    });
   };
 
   const handleSaveEntry = () => {
@@ -174,10 +188,11 @@ const JournalPage = () => {
       title: newEntry.title,
       notes: newEntry.notes,
       photos: newEntry.photos,
+      photoCaptions: newEntry.photoCaptions,
     };
 
     setEntries([entry, ...entries]);
-    setNewEntry({ title: "", notes: "", photos: [] });
+    setNewEntry({ title: "", notes: "", photos: [], photoCaptions: [] });
     setIsCreating(false);
 
     toast({
@@ -276,22 +291,36 @@ const JournalPage = () => {
               </div>
 
               {newEntry.photos.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                   {newEntry.photos.map((photo, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={photo}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-md border-2 border-border"
-                      />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removePhoto(index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    <div key={index} className="space-y-2">
+                      <div className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-48 object-cover rounded-md border-2 border-border"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`caption-${index}`} className="text-sm">
+                          Caption for photo {index + 1}
+                        </Label>
+                        <Input
+                          id={`caption-${index}`}
+                          placeholder="Add a caption for this photo..."
+                          value={newEntry.photoCaptions[index] || ""}
+                          onChange={(e) => updatePhotoCaption(index, e.target.value)}
+                          maxLength={200}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
