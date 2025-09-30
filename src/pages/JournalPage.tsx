@@ -220,37 +220,40 @@ const JournalPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-6 py-8">
-      <PhotoAlbumView
-        isOpen={selectedEntry !== null}
-        onClose={() => setSelectedEntry(null)}
-        title={selectedEntry?.title || ""}
-        date={selectedEntry?.date || ""}
-        photos={
-          selectedEntry?.photos.map((photo, index) => ({
-            src: photo,
-            caption: selectedEntry.photoCaptions?.[index] || `Photo ${index + 1}`,
-          })) || []
-        }
-      />
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-7xl">
+        <PhotoAlbumView
+          isOpen={selectedEntry !== null}
+          onClose={() => setSelectedEntry(null)}
+          title={selectedEntry?.title || ""}
+          date={selectedEntry?.date || ""}
+          photos={
+            selectedEntry?.photos.map((photo, index) => ({
+              src: photo,
+              caption: selectedEntry.photoCaptions?.[index] || `Photo ${index + 1}`,
+            })) || []
+          }
+        />
 
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">Travel Journal</h1>
-          <p className="text-muted-foreground text-lg">Document your adventures and memories</p>
+        <div className="mb-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-2">Travel Journal</h1>
+            <p className="text-muted-foreground text-lg sm:text-xl">
+              Document your adventures and preserve your memories
+            </p>
+          </div>
+          <Button onClick={() => setIsCreating(!isCreating)} size="lg" className="gap-2 shadow-lg">
+            <Plus className="w-4 h-4" />
+            New Entry
+          </Button>
         </div>
-        <Button onClick={() => setIsCreating(!isCreating)} size="lg" className="gap-2">
-          <Plus className="w-4 h-4" />
-          New Entry
-        </Button>
-      </div>
 
-      {/* Create New Entry Form */}
-      {isCreating && (
-        <Card className="mb-8 border-2 border-border">
-          <CardHeader>
-            <CardTitle>Create Journal Entry</CardTitle>
-          </CardHeader>
+        {/* Create New Entry Form */}
+        {isCreating && (
+          <Card className="mb-12 border-2 border-primary/20 shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-2xl">Create Journal Entry</CardTitle>
+            </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -326,78 +329,104 @@ const JournalPage = () => {
                 Cancel
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Journal Entries List */}
-      <div className="space-y-6">
-        {entries.length === 0 ? (
-          <Card className="border-2 border-dashed border-border">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-muted-foreground text-lg mb-4">No journal entries yet</p>
-              <Button onClick={() => setIsCreating(true)} variant="outline" className="gap-2">
-                <Plus className="w-4 h-4" />
-                Create your first entry
-              </Button>
             </CardContent>
           </Card>
-        ) : (
-          entries.map((entry) => (
-            <Card
-              key={entry.id}
-              className="border-2 border-border hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setSelectedEntry(entry)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-2xl mb-2">{entry.title}</CardTitle>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      {new Date(entry.date).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteEntry(entry.id);
-                    }}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardHeader>
+        )}
 
-              <CardContent className="space-y-4">
-                {entry.photos.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {entry.photos.map((photo, index) => (
-                      <img
-                        key={index}
-                        src={photo}
-                        alt={`${entry.title} - Photo ${index + 1}`}
-                        className="w-full h-40 object-cover rounded-md border border-border"
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {entry.notes && (
-                  <p className="text-foreground whitespace-pre-wrap leading-relaxed">{entry.notes}</p>
-                )}
+        {/* Journal Entries List */}
+        <div className="space-y-8">
+          {entries.length === 0 ? (
+            <Card className="border-2 border-dashed border-border">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <p className="text-muted-foreground text-lg mb-4">No journal entries yet</p>
+                <Button onClick={() => setIsCreating(true)} variant="outline" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Create your first entry
+                </Button>
               </CardContent>
             </Card>
-          ))
-        )}
+          ) : (
+            entries.map((entry) => (
+              <article key={entry.id} className="group">
+                <Card
+                  className="border-2 border-border hover:border-primary/50 transition-all duration-300 cursor-pointer overflow-hidden"
+                  onClick={() => setSelectedEntry(entry)}
+                >
+                  {/* Featured Image if available */}
+                  {entry.photos.length > 0 && (
+                    <div className="relative h-48 sm:h-64 md:h-80 overflow-hidden">
+                      <img
+                        src={entry.photos[0]}
+                        alt={entry.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+                          {entry.title}
+                        </h2>
+                      </div>
+                    </div>
+                  )}
+
+                  <CardHeader className={entry.photos.length === 0 ? "" : "pt-6"}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        {entry.photos.length === 0 && (
+                          <CardTitle className="text-2xl sm:text-3xl mb-3">{entry.title}</CardTitle>
+                        )}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(entry.date).toLocaleDateString("en-US", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteEntry(entry.id);
+                        }}
+                        className="text-muted-foreground hover:text-destructive flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-6">
+                    {entry.photos.length > 1 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {entry.photos.slice(1).map((photo, index) => (
+                          <div key={index} className="relative overflow-hidden rounded-lg group/photo">
+                            <img
+                              src={photo}
+                              alt={`${entry.title} - Photo ${index + 2}`}
+                              className="w-full h-32 sm:h-40 object-cover border border-border group-hover/photo:scale-110 transition-transform duration-300"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {entry.notes && (
+                      <div className="prose prose-sm sm:prose max-w-none">
+                        <p className="text-foreground whitespace-pre-wrap leading-relaxed">
+                          {entry.notes}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </article>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
