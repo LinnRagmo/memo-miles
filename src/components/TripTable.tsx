@@ -1,5 +1,5 @@
 import { TripDay } from "@/types/trip";
-import { Clock, MapPin, StickyNote, Car, Hotel, Coffee, Camera } from "lucide-react";
+import { Clock, MapPin, StickyNote, Car, Hotel, Camera, Sunrise, Sunset } from "lucide-react";
 
 interface TripTableProps {
   days: TripDay[];
@@ -35,13 +35,30 @@ const TripTable = ({ days, onDayClick, onUpdateDay }: TripTableProps) => {
                 onClick={() => onDayClick(day)}
                 className="bg-foreground text-background cursor-pointer hover:bg-foreground/90 transition-colors px-4 py-4 border-b-2 border-border"
               >
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-2">
                   <span className="text-lg font-bold">
                     {day.date}
                   </span>
                   <span className="text-sm opacity-80">
                     Day {dayIndex + 1} • {day.stops.length} events
                   </span>
+                  {/* Sunrise/Sunset Times */}
+                  {(day.sunrise || day.sunset) && (
+                    <div className="flex items-center gap-3 text-xs opacity-90 pt-1">
+                      {day.sunrise && (
+                        <div className="flex items-center gap-1.5">
+                          <Sunrise className="w-3.5 h-3.5" />
+                          <span>{day.sunrise}</span>
+                        </div>
+                      )}
+                      {day.sunset && (
+                        <div className="flex items-center gap-1.5">
+                          <Sunset className="w-3.5 h-3.5" />
+                          <span>{day.sunset}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

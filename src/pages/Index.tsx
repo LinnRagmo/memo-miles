@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trip, TripDay, Stop } from "@/types/trip";
 import TripHeader from "@/components/TripHeader";
 import TripTable from "@/components/TripTable";
 import DayDetailModal from "@/components/DayDetailModal";
 import { toast } from "sonner";
+import { fetchSunriseSunset, parseDate } from "@/lib/sunriseSunset";
 
 // Sample data with coordinates for map display
 const sampleTrip: Trip = {
@@ -156,6 +157,34 @@ const Index = () => {
   const [trip, setTrip] = useState<Trip>(sampleTrip);
   const [selectedDay, setSelectedDay] = useState<TripDay | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Fetch sunrise/sunset times for all days on mount
+  useEffect(() => {
+    const fetchAllSunriseSunset = async () => {
+      const updatedDays = await Promise.all(
+        trip.days.map(async (day) => {
+          // Use the first stop's coordinates if available
+          const firstStop = day.stops.find(stop => stop.coordinates);
+          if (!firstStop?.coordinates) {
+            return day;
+          }
+
+          const [lng, lat] = firstStop.coordinates;
+          const date = parseDate(day.date);
+          const sunData = await fetchSunriseSunset(lat, lng, date);
+
+          if (sunData) {
+            return { ...day, sunrise: sunData.sunrise, sunset: sunData.sunset };
+          }
+          return day;
+        })
+      );
+
+      setTrip(prev => ({ ...prev, days: updatedDays }));
+    };
+
+    fetchAllSunriseSunset();
+  }, []); // Only run once on mount
 
   const handleDayClick = (day: TripDay) => {
     setSelectedDay(day);

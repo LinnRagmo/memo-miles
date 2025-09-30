@@ -5,6 +5,8 @@ export interface TripDay {
   activities: string;
   notes: string;
   stops: Stop[];
+  sunrise?: string;
+  sunset?: string;
 }
 
 export interface Stop {
