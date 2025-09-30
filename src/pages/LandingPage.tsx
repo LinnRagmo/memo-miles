@@ -35,17 +35,21 @@ const LandingPage = () => {
       />
 
       {/* Content */}
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 px-6 max-w-6xl w-full">
-        {boxes.map((box) => (
-          <Card
-            key={box.title}
-            onClick={() => navigate(box.route)}
-            className="cursor-pointer bg-white/95 dark:bg-black/95 backdrop-blur-sm border-2 border-foreground hover:scale-105 transition-transform duration-200 p-12 flex flex-col items-center justify-center text-center min-h-[280px]"
-          >
-            <h2 className="text-4xl font-bold text-foreground mb-4">{box.title}</h2>
-            <p className="text-foreground/70 text-lg">{box.description}</p>
-          </Card>
-        ))}
+      <div className="relative z-10 flex flex-col items-center justify-center gap-12 px-6 max-w-6xl w-full">
+        <h1 className="text-7xl font-bold text-white tracking-tight">MEMOmiles</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+          {boxes.map((box) => (
+            <Card
+              key={box.title}
+              onClick={() => navigate(box.route)}
+              className="cursor-pointer bg-white/95 dark:bg-black/95 backdrop-blur-sm border-2 border-foreground hover:scale-105 transition-transform duration-200 p-12 flex flex-col items-center justify-center text-center min-h-[280px]"
+            >
+              <h2 className="text-4xl font-bold text-foreground mb-4">{box.title}</h2>
+              <p className="text-foreground/70 text-lg">{box.description}</p>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
