@@ -1,5 +1,5 @@
 import { TripDay } from "@/types/trip";
-import { Car, Clock, MapPin, StickyNote } from "lucide-react";
+import { Clock, MapPin, StickyNote, Car, Hotel, Coffee, Camera } from "lucide-react";
 
 interface TripTableProps {
   days: TripDay[];
@@ -7,91 +7,108 @@ interface TripTableProps {
   onUpdateDay: (dayId: string, field: keyof TripDay, value: string) => void;
 }
 
+const getEventIcon = (type: string) => {
+  switch (type) {
+    case "drive":
+      return <Car className="w-4 h-4" />;
+    case "stop":
+      return <Hotel className="w-4 h-4" />;
+    case "activity":
+      return <Camera className="w-4 h-4" />;
+    default:
+      return <MapPin className="w-4 h-4" />;
+  }
+};
+
 const TripTable = ({ days, onDayClick, onUpdateDay }: TripTableProps) => {
   return (
     <div className="container mx-auto px-6 py-6">
-      <div className="bg-card rounded-lg shadow-medium overflow-hidden border border-border">
+      <div className="bg-card rounded-lg overflow-hidden border-2 border-border">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-muted/50 border-b border-border">
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground w-[140px]">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    Date
-                  </div>
+              <tr className="bg-foreground text-background border-b-2 border-border">
+                <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider w-[140px]">
+                  Time
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground w-[140px]">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    Driving Time
-                  </div>
+                <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider">
+                  Event / Activity
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    Activities
-                  </div>
+                <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider w-[140px]">
+                  Driving Time
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
-                  <div className="flex items-center gap-2">
-                    <StickyNote className="w-4 h-4 text-muted-foreground" />
-                    Notes
-                  </div>
+                <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider w-[200px]">
+                  Notes
                 </th>
               </tr>
             </thead>
             <tbody>
-              {days.map((day, index) => (
-                <tr
-                  key={day.id}
-                  onClick={() => onDayClick(day)}
-                  className="border-b border-border hover:bg-muted/30 transition-colors cursor-pointer group"
-                >
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-foreground">{day.date}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Day {index + 1}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <input
-                      type="text"
-                      value={day.drivingTime}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        onUpdateDay(day.id, 'drivingTime', e.target.value);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-full bg-transparent border-none outline-none text-sm text-foreground focus:bg-input rounded px-2 py-1 -mx-2 transition-colors"
-                      placeholder="e.g. 3h 30m"
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <input
-                      type="text"
-                      value={day.activities}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        onUpdateDay(day.id, 'activities', e.target.value);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-full bg-transparent border-none outline-none text-sm text-foreground focus:bg-input rounded px-2 py-1 -mx-2 transition-colors"
-                      placeholder="Add activities..."
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <input
-                      type="text"
-                      value={day.notes}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        onUpdateDay(day.id, 'notes', e.target.value);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-full bg-transparent border-none outline-none text-sm text-muted-foreground focus:bg-input rounded px-2 py-1 -mx-2 transition-colors"
-                      placeholder="Add notes..."
-                    />
-                  </td>
-                </tr>
+              {days.map((day, dayIndex) => (
+                <>
+                  {/* Day Header Row */}
+                  <tr 
+                    key={`${day.id}-header`}
+                    onClick={() => onDayClick(day)}
+                    className="bg-muted hover:bg-accent cursor-pointer transition-colors border-b border-border"
+                  >
+                    <td 
+                      colSpan={4} 
+                      className="px-6 py-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-base font-bold text-foreground">
+                            {day.date}
+                          </span>
+                          <span className="text-sm text-muted-foreground font-medium">
+                            Day {dayIndex + 1}
+                          </span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {day.stops.length} events
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Event Rows */}
+                  {day.stops.map((stop, stopIndex) => (
+                    <tr
+                      key={stop.id}
+                      className="border-b border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          {stop.time}
+                        </div>
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">
+                            {getEventIcon(stop.type)}
+                          </span>
+                          <span className="text-sm font-medium text-foreground">
+                            {stop.location}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3">
+                        {stop.type === "drive" && (
+                          <div className="flex items-center gap-2 text-sm text-foreground">
+                            <Car className="w-4 h-4 text-muted-foreground" />
+                            {day.drivingTime}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="text-sm text-muted-foreground">
+                          {stop.notes}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </>
               ))}
             </tbody>
           </table>
@@ -100,11 +117,5 @@ const TripTable = ({ days, onDayClick, onUpdateDay }: TripTableProps) => {
     </div>
   );
 };
-
-const Calendar = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-);
 
 export default TripTable;
