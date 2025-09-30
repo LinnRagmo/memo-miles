@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { TripDay, Stop } from "@/types/trip";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimelineView from "./TimelineView";
@@ -36,11 +36,11 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent }: DayDetailModalProp
       <DialogContent className="max-w-[95vw] h-[90vh] p-0 gap-0 animate-fade-in">
         <DialogHeader className="px-6 py-4 border-b border-border bg-card flex flex-row items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">{day.date}</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <DialogTitle className="text-xl font-semibold text-foreground">{day.date}</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground mt-0.5">
               {day.drivingTime && `${day.drivingTime} driving`}
               {day.stops.length > 0 && ` • ${day.stops.length} stops`}
-            </p>
+            </DialogDescription>
           </div>
           <button
             onClick={onClose}
