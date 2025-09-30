@@ -1,20 +1,29 @@
 import { useState } from "react";
-import { TripDay } from "@/types/trip";
+import { TripDay, Stop } from "@/types/trip";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import TimelineView from "./TimelineView";
 import MapView from "./MapView";
+import AddEventForm from "./AddEventForm";
 
 interface DayDetailModalProps {
   day: TripDay | null;
   isOpen: boolean;
   onClose: () => void;
+  onAddEvent: (dayId: string, event: Omit<Stop, "id">) => void;
 }
 
-const DayDetailModal = ({ day, isOpen, onClose }: DayDetailModalProps) => {
+const DayDetailModal = ({ day, isOpen, onClose, onAddEvent }: DayDetailModalProps) => {
   const [highlightedStopId, setHighlightedStopId] = useState<string | undefined>();
+  const [showAddForm, setShowAddForm] = useState(false);
 
   if (!day) return null;
+
+  const handleAddEvent = (event: Omit<Stop, "id">) => {
+    onAddEvent(day.id, event);
+    setShowAddForm(false);
+  };
 
   const handleStopClick = (stopId: string) => {
     setHighlightedStopId(stopId);
@@ -44,6 +53,23 @@ const DayDetailModal = ({ day, isOpen, onClose }: DayDetailModalProps) => {
         <div className="flex flex-1 overflow-hidden">
           {/* Left Panel - Timeline */}
           <div className="w-1/2 border-r border-border overflow-y-auto bg-background">
+            <div className="p-4">
+              {!showAddForm ? (
+                <Button
+                  onClick={() => setShowAddForm(true)}
+                  variant="outline"
+                  className="w-full mb-4 h-10 font-bold uppercase text-xs tracking-wider"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Event
+                </Button>
+              ) : (
+                <AddEventForm
+                  onAddEvent={handleAddEvent}
+                  onCancel={() => setShowAddForm(false)}
+                />
+              )}
+            </div>
             <TimelineView 
               day={day} 
               onStopClick={handleStopClick}

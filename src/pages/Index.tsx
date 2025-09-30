@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trip, TripDay } from "@/types/trip";
+import { Trip, TripDay, Stop } from "@/types/trip";
 import TripHeader from "@/components/TripHeader";
 import TripTable from "@/components/TripTable";
 import DayDetailModal from "@/components/DayDetailModal";
@@ -193,6 +193,31 @@ const Index = () => {
     toast.success("New day added to your trip!");
   };
 
+  const handleAddEvent = (dayId: string, event: Omit<Stop, "id">) => {
+    const newStop: Stop = {
+      ...event,
+      id: `stop-${Date.now()}`,
+    };
+
+    setTrip(prev => ({
+      ...prev,
+      days: prev.days.map(day =>
+        day.id === dayId
+          ? { ...day, stops: [...day.stops, newStop] }
+          : day
+      )
+    }));
+
+    // Update selectedDay to reflect the new stop
+    setSelectedDay(prev => 
+      prev && prev.id === dayId
+        ? { ...prev, stops: [...prev.stops, newStop] }
+        : prev
+    );
+
+    toast.success("Event added successfully!");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <TripHeader
@@ -212,6 +237,7 @@ const Index = () => {
         day={selectedDay}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onAddEvent={handleAddEvent}
       />
     </div>
   );
