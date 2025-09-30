@@ -37,46 +37,9 @@ interface JournalEntry {
 const templateEntries: JournalEntry[] = [
   {
     id: "template-1",
-    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    title: "Pacific Coast Highway - Day 3",
-    notes: "The drive from Big Sur to Santa Barbara was absolutely breathtaking. We stopped at multiple scenic overlooks and watched the sunset from a clifftop viewpoint.",
-    photos: [samplePhoto1, samplePhoto2, samplePhoto3, samplePhoto4],
-    photoCaptions: [
-      "The winding coastal highway offered endless views of the Pacific Ocean",
-      "Sunset over the cliffs - one of the most beautiful moments of the trip",
-      "Found the perfect spot to park and take in the scenery",
-      "Campfire under the stars to end an amazing day"
-    ],
-  },
-  {
-    id: "template-2",
-    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    title: "Southwest Desert Adventure",
-    notes: "Exploring the red rock country was like visiting another planet. The vastness of the desert and the vibrant colors at sunset made this an unforgettable experience.",
-    photos: [desertPhoto1, desertPhoto2, desertPhoto3],
-    photoCaptions: [
-      "Monument Valley at golden hour - the red rocks glowed like fire",
-      "Stopped at a classic Route 66 diner for lunch and nostalgia",
-      "Desert sunset with saguaro cacti silhouettes against the purple sky"
-    ],
-  },
-  {
-    id: "template-3",
-    date: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-    title: "Rocky Mountain High",
-    notes: "The mountain roads took us through pristine alpine forests and past crystal-clear lakes. Every turn revealed a new postcard-perfect view.",
-    photos: [mountainPhoto1, mountainPhoto2, mountainPhoto3],
-    photoCaptions: [
-      "Mirror-like reflection at dawn - the lake was perfectly still",
-      "Hiked to this hidden waterfall deep in the forest",
-      "Alpine meadows bursting with wildflowers in full bloom"
-    ],
-  },
-  {
-    id: "template-4",
-    date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
-    title: "Tropical Beach Escape",
-    notes: "Following the coastline led us to pristine beaches and charming seaside towns. The turquoise water and golden sand made every stop a paradise.",
+    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    title: "Coastal Roadtrip",
+    notes: "The Pacific Coast Highway delivered everything we dreamed of and more. Miles of dramatic cliffs plunging into the azure ocean, hidden beaches accessible only by winding trails, and sunsets that painted the sky in shades of orange and pink. We stopped at every scenic overlook, dined on fresh seafood at seaside cafes, and fell asleep to the sound of crashing waves. This stretch of coastline is pure magic.",
     photos: [beachPhoto1, beachPhoto2, beachPhoto3],
     photoCaptions: [
       "Private beach cove with crystal-clear turquoise water and swaying palms",
@@ -85,16 +48,28 @@ const templateEntries: JournalEntry[] = [
     ],
   },
   {
-    id: "template-5",
-    date: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString(),
-    title: "New England Fall Foliage Tour",
-    notes: "Driving through Vermont and New Hampshire during peak fall colors was magical. Every winding country road offered a new explosion of reds, oranges, and golds.",
+    id: "template-2",
+    date: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+    title: "Mountain Adventure",
+    notes: "Winding mountain roads led us higher and higher into alpine wilderness. Each switchback revealed breathtaking vistas of snow-capped peaks and pristine lakes reflecting the sky like mirrors. We hiked through forests of towering pines, discovered hidden waterfalls cascading down mossy rocks, and breathed the crisp mountain air that seemed to clear away all worries. The mountains renewed our spirits.",
+    photos: [mountainPhoto1, mountainPhoto2, mountainPhoto3],
+    photoCaptions: [
+      "Mirror-like reflection at dawn - the lake was perfectly still",
+      "Hiked to this hidden waterfall deep in the forest",
+      "Alpine meadows bursting with wildflowers in full bloom"
+    ],
+  },
+  {
+    id: "template-3",
+    date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+    title: "City Escape",
+    notes: "Sometimes the best roadtrips lead you to unexpected urban adventures. We explored vibrant neighborhoods filled with street art, discovered hole-in-the-wall restaurants serving incredible food, and wandered through historic districts where old meets new. From rooftop bars with skyline views to quiet parks offering refuge from the hustle, the city revealed its hidden gems one block at a time.",
     photos: [fallPhoto1, fallPhoto2, fallPhoto3, fallPhoto4],
     photoCaptions: [
-      "Tunnel of autumn colors on a peaceful country road",
-      "Historic covered bridge surrounded by vibrant fall foliage",
-      "Stopped at a local farm stand for fresh apple cider and pumpkins",
-      "Cozy cabin retreat nestled in the colorful autumn woods"
+      "Colorful street art alley - every wall tells a story",
+      "Historic district with charming architecture and cobblestone streets",
+      "Local market overflowing with fresh produce and artisan goods",
+      "Sunset view from the rooftop - the city lights beginning to glow"
     ],
   },
 ];
@@ -333,8 +308,8 @@ const JournalPage = () => {
           </Card>
         )}
 
-        {/* Journal Entries List */}
-        <div className="space-y-8">
+        {/* Journal Entries Grid */}
+        <div>
           {entries.length === 0 ? (
             <Card className="border-2 border-dashed border-border">
               <CardContent className="flex flex-col items-center justify-center py-16">
@@ -346,45 +321,24 @@ const JournalPage = () => {
               </CardContent>
             </Card>
           ) : (
-            entries.map((entry) => (
-              <article key={entry.id} className="group">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {entries.map((entry) => (
                 <Card
-                  className="border-2 border-border hover:border-primary/50 transition-all duration-300 cursor-pointer overflow-hidden"
+                  key={entry.id}
+                  className="group cursor-pointer overflow-hidden border-2 border-border hover:border-primary/50 hover:shadow-xl transition-all duration-300"
                   onClick={() => setSelectedEntry(entry)}
                 >
-                  {/* Featured Image if available */}
+                  {/* Cover Photo */}
                   {entry.photos.length > 0 && (
-                    <div className="relative h-48 sm:h-64 md:h-80 overflow-hidden">
+                    <div className="relative h-64 overflow-hidden">
                       <img
                         src={entry.photos[0]}
                         alt={entry.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-6">
-                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 drop-shadow-lg">
-                          {entry.title}
-                        </h2>
-                      </div>
-                    </div>
-                  )}
-
-                  <CardHeader className={entry.photos.length === 0 ? "" : "pt-6"}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        {entry.photos.length === 0 && (
-                          <CardTitle className="text-2xl sm:text-3xl mb-3">{entry.title}</CardTitle>
-                        )}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          {new Date(entry.date).toLocaleDateString("en-US", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </div>
-                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                      
+                      {/* Delete Button */}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -392,39 +346,49 @@ const JournalPage = () => {
                           e.stopPropagation();
                           deleteEntry(entry.id);
                         }}
-                        className="text-muted-foreground hover:text-destructive flex-shrink-0"
+                        className="absolute top-3 right-3 bg-black/50 hover:bg-destructive text-white opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                  </CardHeader>
+                  )}
 
-                  <CardContent className="space-y-6">
-                    {entry.photos.length > 1 && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {entry.photos.slice(1).map((photo, index) => (
-                          <div key={index} className="relative overflow-hidden rounded-lg group/photo">
-                            <img
-                              src={photo}
-                              alt={`${entry.title} - Photo ${index + 2}`}
-                              className="w-full h-32 sm:h-40 object-cover border border-border group-hover/photo:scale-110 transition-transform duration-300"
-                            />
-                          </div>
-                        ))}
-                      </div>
+                  <CardContent className="p-6">
+                    {/* Title */}
+                    <h2 className="text-2xl font-bold text-foreground mb-3 line-clamp-2">
+                      {entry.title}
+                    </h2>
+
+                    {/* Date */}
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(entry.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </div>
+
+                    {/* Text Snippet */}
+                    {entry.notes && (
+                      <p className="text-foreground/80 text-sm leading-relaxed line-clamp-3">
+                        {entry.notes}
+                      </p>
                     )}
 
-                    {entry.notes && (
-                      <div className="prose prose-sm sm:prose max-w-none">
-                        <p className="text-foreground whitespace-pre-wrap leading-relaxed">
-                          {entry.notes}
-                        </p>
+                    {/* Photo Count Badge */}
+                    {entry.photos.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <ImageIcon className="w-3 h-3" />
+                          <span>{entry.photos.length} {entry.photos.length === 1 ? 'photo' : 'photos'}</span>
+                        </div>
                       </div>
                     )}
                   </CardContent>
                 </Card>
-              </article>
-            ))
+              ))}
+            </div>
           )}
         </div>
       </div>
