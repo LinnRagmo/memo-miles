@@ -6,6 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Image as ImageIcon, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import samplePhoto1 from "@/assets/journal-sample-1.jpg";
+import samplePhoto2 from "@/assets/journal-sample-2.jpg";
+import samplePhoto3 from "@/assets/journal-sample-3.jpg";
+import samplePhoto4 from "@/assets/journal-sample-4.jpg";
 
 interface JournalEntry {
   id: string;
@@ -14,6 +18,14 @@ interface JournalEntry {
   notes: string;
   photos: string[];
 }
+
+const templateEntry: JournalEntry = {
+  id: "template-1",
+  date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+  title: "Pacific Coast Highway - Day 3",
+  notes: "The drive from Big Sur to Santa Barbara was absolutely breathtaking. We stopped at multiple scenic overlooks and watched the sunset from a clifftop viewpoint. The winding roads hugged the coastline, offering stunning ocean views at every turn.\n\nHighlight of the day was finding a secluded beach where we had a campfire dinner under the stars. The sound of waves crashing against the rocks was therapeutic. Can't wait to come back here someday.",
+  photos: [samplePhoto1, samplePhoto2, samplePhoto3, samplePhoto4],
+};
 
 const JournalPage = () => {
   const { toast } = useToast();
@@ -25,11 +37,14 @@ const JournalPage = () => {
     photos: [] as string[],
   });
 
-  // Load entries from localStorage on mount
+  // Load entries from localStorage on mount, or use template if empty
   useEffect(() => {
     const stored = localStorage.getItem("journal-entries");
     if (stored) {
-      setEntries(JSON.parse(stored));
+      const parsed = JSON.parse(stored);
+      setEntries(parsed.length > 0 ? parsed : [templateEntry]);
+    } else {
+      setEntries([templateEntry]);
     }
   }, []);
 
