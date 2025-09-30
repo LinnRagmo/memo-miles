@@ -17,6 +17,13 @@ import desertPhoto3 from "@/assets/journal-desert-3.jpg";
 import mountainPhoto1 from "@/assets/journal-mountains-1.jpg";
 import mountainPhoto2 from "@/assets/journal-mountains-2.jpg";
 import mountainPhoto3 from "@/assets/journal-mountains-3.jpg";
+import beachPhoto1 from "@/assets/journal-beach-1.jpg";
+import beachPhoto2 from "@/assets/journal-beach-2.jpg";
+import beachPhoto3 from "@/assets/journal-beach-3.jpg";
+import fallPhoto1 from "@/assets/journal-fall-1.jpg";
+import fallPhoto2 from "@/assets/journal-fall-2.jpg";
+import fallPhoto3 from "@/assets/journal-fall-3.jpg";
+import fallPhoto4 from "@/assets/journal-fall-4.jpg";
 
 interface JournalEntry {
   id: string;
@@ -63,6 +70,31 @@ const templateEntries: JournalEntry[] = [
       "Mirror-like reflection at dawn - the lake was perfectly still",
       "Hiked to this hidden waterfall deep in the forest",
       "Alpine meadows bursting with wildflowers in full bloom"
+    ],
+  },
+  {
+    id: "template-4",
+    date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
+    title: "Tropical Beach Escape",
+    notes: "Following the coastline led us to pristine beaches and charming seaside towns. The turquoise water and golden sand made every stop a paradise.",
+    photos: [beachPhoto1, beachPhoto2, beachPhoto3],
+    photoCaptions: [
+      "Private beach cove with crystal-clear turquoise water and swaying palms",
+      "Historic lighthouse perched on dramatic cliffs at sunset",
+      "Beachside lunch with fresh seafood and ocean views"
+    ],
+  },
+  {
+    id: "template-5",
+    date: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString(),
+    title: "New England Fall Foliage Tour",
+    notes: "Driving through Vermont and New Hampshire during peak fall colors was magical. Every winding country road offered a new explosion of reds, oranges, and golds.",
+    photos: [fallPhoto1, fallPhoto2, fallPhoto3, fallPhoto4],
+    photoCaptions: [
+      "Tunnel of autumn colors on a peaceful country road",
+      "Historic covered bridge surrounded by vibrant fall foliage",
+      "Stopped at a local farm stand for fresh apple cider and pumpkins",
+      "Cozy cabin retreat nestled in the colorful autumn woods"
     ],
   },
 ];
