@@ -114,16 +114,27 @@ const JournalPage = () => {
   useEffect(() => {
     const stored = localStorage.getItem("journal-entries");
     if (stored) {
-      const parsed = JSON.parse(stored);
-      setEntries(parsed.length > 0 ? parsed : templateEntries);
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.length > 0) {
+          setEntries(parsed);
+        } else {
+          setEntries(templateEntries);
+        }
+      } catch (error) {
+        console.error("Error parsing journal entries:", error);
+        setEntries(templateEntries);
+      }
     } else {
       setEntries(templateEntries);
     }
   }, []);
 
-  // Save entries to localStorage whenever they change
+  // Save entries to localStorage whenever they change (but not on initial mount)
   useEffect(() => {
-    localStorage.setItem("journal-entries", JSON.stringify(entries));
+    if (entries.length > 0) {
+      localStorage.setItem("journal-entries", JSON.stringify(entries));
+    }
   }, [entries]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
