@@ -95,6 +95,11 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
         },
       });
 
+      // Get computed primary color from CSS
+      const primaryColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--primary')
+        .trim();
+      
       map.current.addLayer({
         id: "route",
         type: "line",
@@ -104,7 +109,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
           "line-cap": "round",
         },
         paint: {
-          "line-color": "hsl(var(--primary))",
+          "line-color": `hsl(${primaryColor})`,
           "line-width": 4,
           "line-opacity": 0.8,
         },
