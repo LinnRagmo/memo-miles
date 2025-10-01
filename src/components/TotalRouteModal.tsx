@@ -23,6 +23,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
   });
   const [tokenInput, setTokenInput] = useState("");
   const [isMapLoading, setIsMapLoading] = useState(true);
+  const [containerReady, setContainerReady] = useState(false);
   const { toast } = useToast();
 
   const handleTokenSubmit = () => {
@@ -42,10 +43,20 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
     });
   };
 
+  // Check when container becomes available
   useEffect(() => {
-    console.log('TotalRouteModal useEffect triggered:', { isOpen, hasMapContainer: !!mapContainer.current, hasToken: !!mapboxToken });
+    if (isOpen && mapContainer.current) {
+      console.log('Container mounted');
+      setContainerReady(true);
+    } else {
+      setContainerReady(false);
+    }
+  }, [isOpen, mapContainer.current]);
+
+  useEffect(() => {
+    console.log('TotalRouteModal useEffect triggered:', { isOpen, containerReady, hasToken: !!mapboxToken });
     
-    if (!isOpen || !mapContainer.current || !mapboxToken) {
+    if (!isOpen || !containerReady || !mapboxToken) {
       setIsMapLoading(false);
       console.log('Early return - conditions not met');
       return;
@@ -187,7 +198,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
       map.current = null;
       setIsMapLoading(false);
     };
-  }, [isOpen, trip, mapboxToken]);
+  }, [isOpen, containerReady, trip, mapboxToken]);
 
   const allStops = trip.days.flatMap(day => 
     day.stops.filter(stop => stop.coordinates)
