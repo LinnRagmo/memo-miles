@@ -109,21 +109,9 @@ const JournalPage = () => {
   // Save entries to localStorage whenever they change (but not on initial mount)
   useEffect(() => {
     if (entries.length > 0) {
-      try {
-        localStorage.setItem("journal-entries", JSON.stringify(entries));
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-          toast({
-            title: "Storage limit reached",
-            description: "Your journal has too much data. Please delete some older entries or photos to free up space.",
-            variant: "destructive",
-          });
-          // Revert to previous state by removing the last added entry
-          setEntries(prev => prev.slice(1));
-        }
-      }
+      localStorage.setItem("journal-entries", JSON.stringify(entries));
     }
-  }, [entries, toast]);
+  }, [entries]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -154,44 +142,11 @@ const JournalPage = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          const img = new Image();
-          img.onload = () => {
-            // Compress image to reduce storage size
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Limit max dimensions to reduce size
-            const MAX_WIDTH = 1200;
-            const MAX_HEIGHT = 1200;
-            let width = img.width;
-            let height = img.height;
-            
-            if (width > height) {
-              if (width > MAX_WIDTH) {
-                height *= MAX_WIDTH / width;
-                width = MAX_WIDTH;
-              }
-            } else {
-              if (height > MAX_HEIGHT) {
-                width *= MAX_HEIGHT / height;
-                height = MAX_HEIGHT;
-              }
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            ctx?.drawImage(img, 0, 0, width, height);
-            
-            // Convert to JPEG with 0.7 quality for smaller file size
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-            
-            setNewEntry((prev) => ({
-              ...prev,
-              photos: [...prev.photos, compressedDataUrl],
-              photoCaptions: [...prev.photoCaptions, ""],
-            }));
-          };
-          img.src = event.target!.result as string;
+          setNewEntry((prev) => ({
+            ...prev,
+            photos: [...prev.photos, event.target!.result as string],
+            photoCaptions: [...prev.photoCaptions, ""],
+          }));
         }
       };
       reader.readAsDataURL(file);

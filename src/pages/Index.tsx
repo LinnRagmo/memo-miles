@@ -9,155 +9,147 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { fetchSunriseSunset, parseDate } from "@/lib/sunriseSunset";
 
-// Sample data with coordinates for map display - Great Ocean Road, Australia
+// Sample data with coordinates for map display
 const sampleTrip: Trip = {
   id: "1",
-  title: "Great Ocean Road Adventure",
+  title: "Pacific Coast Highway Road Trip",
   startDate: "Jun 15, 2024",
-  endDate: "Jun 17, 2024",
+  endDate: "Jun 22, 2024",
   days: [
     {
       id: "day-1",
       date: "Jun 15, 2024",
       drivingTime: "2h 30m",
-      activities: "Melbourne to Torquay and Bells Beach",
-      notes: "Start the famous Great Ocean Road journey",
+      activities: "Start in San Francisco, Drive to Monterey",
+      notes: "Check out Fisherman's Wharf before leaving",
       stops: [
         {
           id: "stop-1",
           time: "9:00 AM",
-          location: "Melbourne - Federation Square",
+          location: "San Francisco - Fisherman's Wharf",
           type: "activity",
-          notes: "Breakfast and coffee before departure",
-          coordinates: [144.9685, -37.8180]
+          notes: "Breakfast and coffee, explore the area",
+          coordinates: [-122.4177, 37.8080]
         },
         {
           id: "stop-2",
           time: "11:00 AM",
-          location: "Torquay",
+          location: "Drive to Monterey via Highway 1",
           type: "drive",
-          notes: "Gateway to the Great Ocean Road",
-          coordinates: [144.3292, -38.3339]
+          notes: "Scenic coastal drive, 2.5 hours",
+          coordinates: [-121.8947, 36.6002]
         },
         {
           id: "stop-3",
-          time: "12:00 PM",
-          location: "Bells Beach",
+          time: "1:30 PM",
+          location: "Monterey Bay Aquarium",
           type: "activity",
-          notes: "Famous surf spot, lunch at surf club",
-          coordinates: [144.2825, -38.3686]
+          notes: "Lunch and visit the famous aquarium",
+          coordinates: [-121.9018, 36.6177]
         },
         {
           id: "stop-4",
-          time: "3:00 PM",
-          location: "Lorne",
+          time: "5:00 PM",
+          location: "Hotel check-in - Monterey Plaza",
           type: "stop",
-          notes: "Coastal town, beach walk and dinner",
-          coordinates: [143.9784, -38.5429]
+          notes: "Monterey Plaza Hotel & Spa",
+          coordinates: [-121.8949, 36.6050]
         }
       ]
     },
     {
       id: "day-2",
       date: "Jun 16, 2024",
-      drivingTime: "2h 45m",
-      activities: "Apollo Bay and Cape Otway",
-      notes: "Rainforest and lighthouse exploration",
+      drivingTime: "1h 15m",
+      activities: "17-Mile Drive, Carmel-by-the-Sea",
+      notes: "Take the scenic route",
       stops: [
         {
           id: "stop-1",
           time: "8:00 AM",
-          location: "Lorne Breakfast",
+          location: "Breakfast at hotel",
           type: "stop",
-          coordinates: [143.9784, -38.5429]
+          coordinates: [-121.8949, 36.6050]
         },
         {
           id: "stop-2",
           time: "9:30 AM",
-          location: "Apollo Bay",
+          location: "17-Mile Drive Entrance",
           type: "drive",
-          notes: "Scenic coastal drive with ocean views",
-          coordinates: [143.6711, -38.7571]
+          notes: "Stop at scenic viewpoints along the way",
+          coordinates: [-121.9308, 36.5833]
         },
         {
           id: "stop-3",
           time: "11:00 AM",
-          location: "Great Otway National Park",
+          location: "Lone Cypress",
           type: "activity",
-          notes: "Rainforest walk and waterfalls",
-          coordinates: [143.5569, -38.7546]
+          notes: "Iconic photo spot",
+          coordinates: [-121.9647, 36.5686]
         },
         {
           id: "stop-4",
-          time: "2:00 PM",
-          location: "Cape Otway Lighthouse",
+          time: "12:00 PM",
+          location: "Carmel-by-the-Sea",
           type: "activity",
-          notes: "Historic lighthouse and koala spotting",
-          coordinates: [143.5117, -38.8570]
+          notes: "Lunch and explore the charming town",
+          coordinates: [-121.9233, 36.5552]
         },
         {
           id: "stop-5",
-          time: "5:00 PM",
-          location: "Port Campbell",
-          type: "stop",
-          notes: "Overnight stay in coastal village",
-          coordinates: [142.9921, -38.6167]
+          time: "4:00 PM",
+          location: "Point Lobos State Reserve",
+          type: "activity",
+          notes: "Hiking and wildlife viewing",
+          coordinates: [-121.9499, 36.5184]
         }
       ]
     },
     {
       id: "day-3",
       date: "Jun 17, 2024",
-      drivingTime: "3h 30m",
-      activities: "Twelve Apostles and Shipwreck Coast",
-      notes: "The iconic limestone formations",
+      drivingTime: "3h 45m",
+      activities: "Big Sur scenic drive",
+      notes: "Plan for photo stops",
       stops: [
         {
           id: "stop-1",
-          time: "7:00 AM",
-          location: "Port Campbell Sunrise",
-          type: "stop",
-          coordinates: [142.9921, -38.6167]
+          time: "8:30 AM",
+          location: "Depart Monterey",
+          type: "drive",
+          coordinates: [-121.8949, 36.6050]
         },
         {
           id: "stop-2",
-          time: "8:00 AM",
-          location: "Twelve Apostles",
+          time: "10:00 AM",
+          location: "Bixby Bridge",
           type: "activity",
-          notes: "Iconic rock formations at sunrise",
-          coordinates: [143.1043, -38.6656]
+          notes: "Iconic photo opportunity",
+          coordinates: [-121.9021, 36.3716]
         },
         {
           id: "stop-3",
-          time: "10:00 AM",
-          location: "Loch Ard Gorge",
-          type: "activity",
-          notes: "Dramatic coastal gorge and shipwreck history",
-          coordinates: [143.0915, -38.6725]
+          time: "12:30 PM",
+          location: "Nepenthe Restaurant",
+          type: "stop",
+          notes: "Lunch with amazing ocean views",
+          coordinates: [-121.8692, 36.2694]
         },
         {
           id: "stop-4",
-          time: "12:00 PM",
-          location: "London Bridge",
+          time: "2:30 PM",
+          location: "McWay Falls",
           type: "activity",
-          notes: "Natural rock arch formation",
-          coordinates: [142.9877, -38.6369]
+          notes: "Short hike to waterfall viewpoint",
+          coordinates: [-121.6711, 36.1597]
         },
         {
           id: "stop-5",
-          time: "2:00 PM",
-          location: "Bay of Islands",
-          type: "activity",
-          notes: "Coastal viewpoint and photography",
-          coordinates: [142.9597, -38.6244]
-        },
-        {
-          id: "stop-6",
-          time: "4:00 PM",
-          location: "Warrnambool",
+          time: "5:00 PM",
+          location: "Ragged Point",
           type: "stop",
-          notes: "End of Great Ocean Road, return to Melbourne",
-          coordinates: [142.4826, -38.3809]
+          notes: "End of day destination",
+          coordinates: [-121.3142, 35.7795]
         }
       ]
     }
