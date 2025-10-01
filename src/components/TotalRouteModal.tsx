@@ -43,8 +43,11 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
   };
 
   useEffect(() => {
+    console.log('TotalRouteModal useEffect triggered:', { isOpen, hasMapContainer: !!mapContainer.current, hasToken: !!mapboxToken });
+    
     if (!isOpen || !mapContainer.current || !mapboxToken) {
       setIsMapLoading(false);
+      console.log('Early return - conditions not met');
       return;
     }
 
@@ -56,6 +59,8 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
       }))
     );
 
+    console.log('All stops with coordinates:', allStops.length);
+
     if (allStops.length === 0) {
       setIsMapLoading(false);
       return;
@@ -64,6 +69,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
     // Initialize map
     setIsMapLoading(true);
     mapboxgl.accessToken = mapboxToken;
+    console.log('Initializing Mapbox map...');
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -72,15 +78,27 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
       zoom: 6,
     });
 
+    map.current.on('error', (e) => {
+      console.error('Mapbox error:', e);
+      toast({
+        title: "Map Error",
+        description: "Failed to load map. Please check your Mapbox token is valid.",
+        variant: "destructive",
+      });
+      setIsMapLoading(false);
+    });
+
     map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
     // Wait for map to load before adding route
     map.current.on("load", () => {
+      console.log('Map loaded successfully');
       if (!map.current) return;
       setIsMapLoading(false);
 
       // Create route coordinates array
       const coordinates = allStops.map(stop => stop.coordinates!);
+      console.log('Route coordinates:', coordinates);
 
       // Add route line
       map.current.addSource("route", {
@@ -100,6 +118,10 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
         .getPropertyValue('--primary')
         .trim();
       
+      console.log('Primary color:', primaryColor);
+      const lineColor = primaryColor ? `hsl(${primaryColor})` : '#3b82f6';
+      console.log('Using line color:', lineColor);
+      
       map.current.addLayer({
         id: "route",
         type: "line",
@@ -109,11 +131,12 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
           "line-cap": "round",
         },
         paint: {
-          "line-color": `hsl(${primaryColor})`,
+          "line-color": lineColor,
           "line-width": 4,
           "line-opacity": 0.8,
         },
       });
+      console.log('Route layer added successfully');
 
       // Add markers for each stop
       allStops.forEach((stop, index) => {
