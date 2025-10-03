@@ -8,17 +8,14 @@ const LandingPage = () => {
   const boxes = [
     {
       title: "Inspo",
-      description: "Find inspiration for your next adventure",
       route: "/inspo",
     },
     {
       title: "Plan",
-      description: "Plan your trip itinerary",
       route: "/auth",
     },
     {
       title: "Journal",
-      description: "Document your journey",
       route: "/journal",
     },
   ];
@@ -35,7 +32,7 @@ const LandingPage = () => {
       />
       
       {/* Subtle Colorful Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-amber-500/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-green-500/15 to-teal-500/20" />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center gap-12 px-6 max-w-6xl w-full">
@@ -49,10 +46,9 @@ const LandingPage = () => {
             <Card
               key={box.title}
               onClick={() => navigate(box.route)}
-              className="cursor-pointer bg-white/90 dark:bg-white/10 backdrop-blur-md border border-white/40 hover:scale-105 hover:bg-white/95 dark:hover:bg-white/15 transition-all duration-200 p-6 flex flex-col items-center justify-center text-center min-h-[140px] shadow-lg"
+              className="cursor-pointer bg-white/90 dark:bg-white/10 backdrop-blur-md border border-white/40 hover:scale-105 hover:bg-white/95 dark:hover:bg-white/15 transition-all duration-200 p-8 flex items-center justify-center text-center min-h-[120px] shadow-lg"
             >
-              <h2 className="text-2xl font-bold text-foreground mb-2">{box.title}</h2>
-              <p className="text-foreground/70 text-sm">{box.description}</p>
+              <h2 className="text-3xl font-bold text-foreground">{box.title}</h2>
             </Card>
           ))}
         </div>
