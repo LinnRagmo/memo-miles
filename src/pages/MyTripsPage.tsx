@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, LogOut, MapPin, Trash2 } from "lucide-react";
+import { Plus, LogOut, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import CreateTripDialog from "@/components/CreateTripDialog";
@@ -18,6 +18,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import tripCoastalImg from "@/assets/trip-coastal.jpg";
+import tripMountainImg from "@/assets/trip-mountain.jpg";
+import tripDesertImg from "@/assets/trip-desert.jpg";
+import tripForestImg from "@/assets/trip-forest.jpg";
 
 interface Trip {
   id: string;
@@ -27,6 +31,19 @@ interface Trip {
   cover_image: string | null;
   created_at: string;
 }
+
+const defaultTripImages = [
+  tripCoastalImg,
+  tripMountainImg,
+  tripDesertImg,
+  tripForestImg,
+];
+
+const getDefaultImage = (tripId: string) => {
+  // Use trip ID to consistently pick the same image for each trip
+  const hash = tripId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return defaultTripImages[hash % defaultTripImages.length];
+};
 
 const MyTripsPage = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -140,16 +157,12 @@ const MyTripsPage = () => {
                 onClick={() => navigate(`/plan/${trip.id}`)}
                 className="cursor-pointer"
               >
-                <div className="relative h-40 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                  {trip.cover_image ? (
-                    <img
-                      src={trip.cover_image}
-                      alt={trip.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <MapPin className="w-16 h-16 text-primary/40" />
-                  )}
+                <div className="relative h-40 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
+                  <img
+                    src={trip.cover_image || getDefaultImage(trip.id)}
+                    alt={trip.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
