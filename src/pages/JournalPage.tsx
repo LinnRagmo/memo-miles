@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Image as ImageIcon, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import PhotoAlbumView from "@/components/PhotoAlbumView";
 import samplePhoto1 from "@/assets/journal-sample-1.jpg";
 import samplePhoto2 from "@/assets/journal-sample-2.jpg";
@@ -76,6 +78,8 @@ const templateEntries: JournalEntry[] = [
 
 const JournalPage = () => {
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
@@ -85,6 +89,13 @@ const JournalPage = () => {
     photos: [] as string[],
     photoCaptions: [] as string[],
   });
+
+  // Auth check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
 
   // Load entries from localStorage on mount, or use template if empty
   useEffect(() => {
@@ -253,6 +264,18 @@ const JournalPage = () => {
       description: "Your journal entry has been removed.",
     });
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">

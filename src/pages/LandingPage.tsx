@@ -12,7 +12,7 @@ const LandingPage = () => {
     },
     {
       title: "Plan",
-      route: "/auth",
+      route: "/plan",
     },
     {
       title: "Journal",
