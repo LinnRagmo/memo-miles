@@ -4,9 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, LogOut, MapPin } from "lucide-react";
+import { Plus, LogOut, MapPin, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import CreateTripDialog from "@/components/CreateTripDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Trip {
   id: string;
@@ -20,6 +31,8 @@ interface Trip {
 const MyTripsPage = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [tripToDelete, setTripToDelete] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -53,27 +66,19 @@ const MyTripsPage = () => {
     }
   };
 
-  const handleCreateTrip = async () => {
+  const handleDeleteTrip = async (tripId: string) => {
     try {
-      const today = new Date();
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("trips")
-        .insert({
-          user_id: user?.id,
-          title: "Untitled Trip",
-          start_date: format(today, "yyyy-MM-dd"),
-          end_date: format(today, "yyyy-MM-dd"),
-          trip_data: { days: [] } as any,
-        })
-        .select()
-        .single();
+        .delete()
+        .eq("id", tripId);
 
       if (error) throw error;
-      
-      navigate(`/plan/${data.id}`);
+
+      setTrips(trips.filter(trip => trip.id !== tripId));
       toast({
-        title: "Trip Created",
-        description: "Start planning your adventure!",
+        title: "Trip Deleted",
+        description: "Your trip has been removed.",
       });
     } catch (error: any) {
       toast({
@@ -81,6 +86,8 @@ const MyTripsPage = () => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setTripToDelete(null);
     }
   };
 
@@ -113,7 +120,7 @@ const MyTripsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Create New Trip Card */}
           <Card
-            onClick={handleCreateTrip}
+            onClick={() => setIsCreateDialogOpen(true)}
             className="cursor-pointer border-2 border-dashed hover:border-primary hover:bg-accent/50 transition-all flex items-center justify-center min-h-[280px]"
           >
             <div className="text-center">
@@ -127,28 +134,45 @@ const MyTripsPage = () => {
           {trips.map((trip) => (
             <Card
               key={trip.id}
-              onClick={() => navigate(`/plan/${trip.id}`)}
-              className="cursor-pointer hover:shadow-lg transition-all overflow-hidden group min-h-[280px]"
+              className="hover:shadow-lg transition-all overflow-hidden group min-h-[280px] relative"
             >
-              <div className="relative h-40 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                {trip.cover_image ? (
-                  <img
-                    src={trip.cover_image}
-                    alt={trip.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <MapPin className="w-16 h-16 text-primary/40" />
-                )}
+              <div 
+                onClick={() => navigate(`/plan/${trip.id}`)}
+                className="cursor-pointer"
+              >
+                <div className="relative h-40 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                  {trip.cover_image ? (
+                    <img
+                      src={trip.cover_image}
+                      alt={trip.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <MapPin className="w-16 h-16 text-primary/40" />
+                  )}
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
+                    {trip.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(trip.start_date), "MMM d")} - {format(new Date(trip.end_date), "MMM d, yyyy")}
+                  </p>
+                </div>
               </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
-                  {trip.title}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(trip.start_date), "MMM d")} - {format(new Date(trip.end_date), "MMM d, yyyy")}
-                </p>
-              </div>
+              
+              {/* Delete Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTripToDelete(trip.id);
+                }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </Card>
           ))}
         </div>
@@ -159,6 +183,32 @@ const MyTripsPage = () => {
           </div>
         )}
       </main>
+
+      <CreateTripDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        userId={user?.id || ""}
+      />
+
+      <AlertDialog open={!!tripToDelete} onOpenChange={() => setTripToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Trip?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your trip and all its data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => tripToDelete && handleDeleteTrip(tripToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
