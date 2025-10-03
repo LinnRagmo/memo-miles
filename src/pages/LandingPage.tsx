@@ -14,7 +14,7 @@ const LandingPage = () => {
     {
       title: "Plan",
       description: "Plan your trip itinerary",
-      route: "/plan",
+      route: "/auth",
     },
     {
       title: "Journal",

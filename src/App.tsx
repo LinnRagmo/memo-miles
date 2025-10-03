@@ -8,29 +8,36 @@ import Index from "./pages/Index";
 import InspoPage from "./pages/InspoPage";
 import JournalPage from "./pages/JournalPage";
 import NotFound from "./pages/NotFound";
+import AuthPage from "./pages/AuthPage";
+import MyTripsPage from "./pages/MyTripsPage";
 import TopBar from "./components/TopBar";
 import { FavoritesProvider } from "./contexts/FavoritesContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <FavoritesProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <TopBar />
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/plan" element={<Index />} />
-            <Route path="/inspo" element={<InspoPage />} />
-            <Route path="/journal" element={<JournalPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </FavoritesProvider>
+      <AuthProvider>
+        <FavoritesProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <TopBar />
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/plan" element={<MyTripsPage />} />
+              <Route path="/plan/:tripId" element={<Index />} />
+              <Route path="/inspo" element={<InspoPage />} />
+              <Route path="/journal" element={<JournalPage />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </FavoritesProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

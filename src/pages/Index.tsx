@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Trip, TripDay, Stop } from "@/types/trip";
 import TripHeader from "@/components/TripHeader";
 import TripTable from "@/components/TripTable";
@@ -8,6 +9,9 @@ import { PlanSidebar } from "@/components/PlanSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { fetchSunriseSunset, parseDate } from "@/lib/sunriseSunset";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
 
 // Sample data with coordinates for map display - Great Ocean Road, Australia
 const sampleTrip: Trip = {
@@ -165,21 +169,86 @@ const sampleTrip: Trip = {
 };
 
 const Index = () => {
-  const [trip, setTrip] = useState<Trip>(sampleTrip);
+  const { tripId } = useParams();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<TripDay | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTotalRouteOpen, setIsTotalRouteOpen] = useState(false);
 
-  // Fetch sunrise/sunset times for all days on mount
+  // Auth check
   useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
+
+  // Load trip from database
+  useEffect(() => {
+    if (!tripId || !user) return;
+
+    const loadTrip = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("trips")
+          .select("*")
+          .eq("id", tripId)
+          .single();
+
+        if (error) throw error;
+
+        // Convert database format to Trip format
+        const tripData = data.trip_data as unknown as { days: TripDay[] };
+        const loadedTrip: Trip = {
+          id: data.id,
+          title: data.title,
+          startDate: format(new Date(data.start_date), "MMM d, yyyy"),
+          endDate: format(new Date(data.end_date), "MMM d, yyyy"),
+          days: tripData?.days || [],
+        };
+
+        setTrip(loadedTrip);
+      } catch (error: any) {
+        toast.error("Failed to load trip");
+        navigate("/plan");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTrip();
+  }, [tripId, user, navigate]);
+
+  // Save trip to database
+  const saveTrip = async (updatedTrip: Trip) => {
+    if (!tripId) return;
+
+    try {
+      const { error } = await supabase
+        .from("trips")
+        .update({
+          title: updatedTrip.title,
+          trip_data: { days: updatedTrip.days } as any,
+        })
+        .eq("id", tripId);
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error("Failed to save changes");
+    }
+  };
+
+  // Fetch sunrise/sunset times for all days
+  useEffect(() => {
+    if (!trip) return;
+
     const fetchAllSunriseSunset = async () => {
       const updatedDays = await Promise.all(
         trip.days.map(async (day) => {
-          // Use the first stop's coordinates if available
           const firstStop = day.stops.find(stop => stop.coordinates);
-          if (!firstStop?.coordinates) {
-            return day;
-          }
+          if (!firstStop?.coordinates) return day;
 
           const [lng, lat] = firstStop.coordinates;
           const date = parseDate(day.date);
@@ -192,11 +261,13 @@ const Index = () => {
         })
       );
 
-      setTrip(prev => ({ ...prev, days: updatedDays }));
+      const updatedTrip = { ...trip, days: updatedDays };
+      setTrip(updatedTrip);
+      saveTrip(updatedTrip);
     };
 
     fetchAllSunriseSunset();
-  }, []); // Only run once on mount
+  }, [trip?.id]); // Only when trip ID changes
 
   const handleDayClick = (day: TripDay) => {
     setSelectedDay(day);
@@ -204,18 +275,24 @@ const Index = () => {
   };
 
   const handleUpdateDay = (dayId: string, field: keyof TripDay, value: string) => {
-    setTrip(prev => ({
-      ...prev,
-      days: prev.days.map(day =>
+    if (!trip) return;
+    
+    const updatedTrip = {
+      ...trip,
+      days: trip.days.map(day =>
         day.id === dayId ? { ...day, [field]: value } : day
       )
-    }));
+    };
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
   };
 
   const handleAddDay = () => {
+    if (!trip) return;
+
     const lastDay = trip.days[trip.days.length - 1];
-    const newDate = new Date(lastDay.date);
-    newDate.setDate(newDate.getDate() + 1);
+    const newDate = lastDay ? new Date(lastDay.date) : new Date();
+    if (lastDay) newDate.setDate(newDate.getDate() + 1);
     
     const newDay: TripDay = {
       id: `day-${trip.days.length + 1}`,
@@ -226,28 +303,33 @@ const Index = () => {
       stops: []
     };
 
-    setTrip(prev => ({
-      ...prev,
-      days: [...prev.days, newDay]
-    }));
-
+    const updatedTrip = {
+      ...trip,
+      days: [...trip.days, newDay]
+    };
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
     toast.success("New day added to your trip!");
   };
 
   const handleAddEvent = (dayId: string, event: Omit<Stop, "id">) => {
+    if (!trip) return;
+
     const newStop: Stop = {
       ...event,
       id: `stop-${Date.now()}`,
     };
 
-    setTrip(prev => ({
-      ...prev,
-      days: prev.days.map(day =>
+    const updatedTrip = {
+      ...trip,
+      days: trip.days.map(day =>
         day.id === dayId
           ? { ...day, stops: [...day.stops, newStop] }
           : day
       )
-    }));
+    };
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
 
     // Update selectedDay to reflect the new stop
     setSelectedDay(prev => 
@@ -275,6 +357,22 @@ const Index = () => {
 
     handleAddEvent(selectedDay.id, newStop);
   };
+
+  if (loading || authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!trip) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Trip not found</p>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
