@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import backgroundImage from "@/assets/road-trip-background.jpg";
+import australiaRoadTripImg from "@/assets/australia-road-trip.jpg";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -26,7 +26,7 @@ const LandingPage = () => {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url(${backgroundImage})`,
+          backgroundImage: `url(${australiaRoadTripImg})`,
           filter: "brightness(0.85) saturate(1.1)",
         }}
       />
