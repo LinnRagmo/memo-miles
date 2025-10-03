@@ -41,14 +41,14 @@ const LandingPage = () => {
           <p className="text-xl text-white font-medium tracking-wide drop-shadow-md">Where roadtrip plans become stories.</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
           {boxes.map((box) => (
             <Card
               key={box.title}
               onClick={() => navigate(box.route)}
-              className="cursor-pointer bg-white/90 dark:bg-white/10 backdrop-blur-md border border-white/40 hover:scale-105 hover:bg-white/95 dark:hover:bg-white/15 transition-all duration-200 p-8 flex items-center justify-center text-center min-h-[120px] shadow-lg"
+              className="cursor-pointer bg-white/90 dark:bg-white/10 backdrop-blur-md border border-white/40 hover:scale-105 hover:bg-white/95 dark:hover:bg-white/15 transition-all duration-200 p-6 flex items-center justify-center text-center min-h-[100px] shadow-lg"
             >
-              <h2 className="text-3xl font-bold text-foreground">{box.title}</h2>
+              <h2 className="text-2xl font-bold text-foreground">{box.title}</h2>
             </Card>
           ))}
         </div>
