@@ -55,14 +55,15 @@ const MyTripsPage = () => {
 
   const handleCreateTrip = async () => {
     try {
+      const today = new Date();
       const { data, error } = await supabase
         .from("trips")
         .insert({
           user_id: user?.id,
-          title: "New Road Trip",
-          start_date: format(new Date(), "yyyy-MM-dd"),
-          end_date: format(new Date(), "yyyy-MM-dd"),
-          trip_data: { days: [] },
+          title: "Untitled Trip",
+          start_date: format(today, "yyyy-MM-dd"),
+          end_date: format(today, "yyyy-MM-dd"),
+          trip_data: { days: [] } as any,
         })
         .select()
         .single();
@@ -72,7 +73,7 @@ const MyTripsPage = () => {
       navigate(`/plan/${data.id}`);
       toast({
         title: "Trip Created",
-        description: "Your new trip has been created!",
+        description: "Start planning your adventure!",
       });
     } catch (error: any) {
       toast({

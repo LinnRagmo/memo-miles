@@ -21,6 +21,17 @@ const getEventIcon = (type: string) => {
 };
 
 const TripTable = ({ days, onDayClick, onUpdateDay }: TripTableProps) => {
+  if (days.length === 0) {
+    return (
+      <div className="container mx-auto px-6 py-12">
+        <div className="text-center">
+          <p className="text-muted-foreground text-lg mb-2">Your trip is empty</p>
+          <p className="text-sm text-muted-foreground">Click "Add Day" to start planning your adventure</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-6 py-6">
       <div className="overflow-x-auto">
