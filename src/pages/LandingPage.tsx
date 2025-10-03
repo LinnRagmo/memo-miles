@@ -8,15 +8,15 @@ const LandingPage = () => {
   const boxes = [
     {
       title: "Inspo",
-      route: "/inspo",
+      route: "/auth",
     },
     {
       title: "Plan",
-      route: "/plan",
+      route: "/auth",
     },
     {
       title: "Journal",
-      route: "/journal",
+      route: "/auth",
     },
   ];
 

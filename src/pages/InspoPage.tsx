@@ -8,6 +8,8 @@ import { MapPin, Clock, User, Calendar, Heart, Search, Plus, Trash2, X, Image as
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import heroImagePCH from "@/assets/inspo-hero-pch.jpg";
 import heroImageSmokies from "@/assets/inspo-hero-smokies.jpg";
@@ -91,6 +93,8 @@ const sampleTrips: RoadTripPost[] = [
 
 const InspoPage = () => {
   const { addFavorite, isFavorite } = useFavorites();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [userPosts, setUserPosts] = useState<RoadTripPost[]>([]);
@@ -104,6 +108,13 @@ const InspoPage = () => {
     highlights: [""],
     stops: [{ location: "", description: "" }],
   });
+
+  // Auth check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
 
   // Load user posts from localStorage
   useEffect(() => {
@@ -251,6 +262,18 @@ const InspoPage = () => {
       )
     );
   });
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
