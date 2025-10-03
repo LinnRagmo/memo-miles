@@ -31,8 +31,8 @@ const LandingPage = () => {
         }}
       />
       
-      {/* Subtle Colorful Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-green-500/15 to-teal-500/20" />
+      {/* Subtle Brightness Overlay */}
+      <div className="absolute inset-0 bg-white/10" />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center gap-12 px-6 max-w-6xl w-full">
