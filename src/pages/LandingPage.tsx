@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import australiaRoadTripImg from "@/assets/australia-road-trip.jpg";
+import { Lightbulb, Map, BookOpen } from "lucide-react";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -9,14 +10,17 @@ const LandingPage = () => {
     {
       title: "Inspo",
       route: "/auth",
+      icon: Lightbulb,
     },
     {
       title: "Plan",
       route: "/auth",
+      icon: Map,
     },
     {
       title: "Journal",
       route: "/auth",
+      icon: BookOpen,
     },
   ];
 
@@ -48,7 +52,10 @@ const LandingPage = () => {
               onClick={() => navigate(box.route)}
               className="cursor-pointer bg-white/20 dark:bg-white/20 backdrop-blur-md border border-white/40 hover:scale-105 hover:bg-white/30 dark:hover:bg-white/30 transition-all duration-200 p-6 flex items-center justify-center text-center min-h-[100px] shadow-lg"
             >
-              <h2 className="text-2xl font-bold text-white">{box.title}</h2>
+              <div className="flex items-center gap-3">
+                <box.icon className="w-6 h-6 text-white" />
+                <h2 className="text-2xl font-bold text-white">{box.title}</h2>
+              </div>
             </Card>
           ))}
         </div>
