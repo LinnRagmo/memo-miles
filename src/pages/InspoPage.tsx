@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { MapPin, Clock, User, Calendar, Heart, Search, Plus, Trash2, X, Image as ImageIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Clock, User, Calendar, Heart, Search, Plus, Trash2, X, Image as ImageIcon, Filter } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
@@ -96,6 +97,8 @@ const InspoPage = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [durationFilter, setDurationFilter] = useState("all");
+  const [distanceFilter, setDistanceFilter] = useState("all");
   const [isCreating, setIsCreating] = useState(false);
   const [userPosts, setUserPosts] = useState<RoadTripPost[]>([]);
   const [newPost, setNewPost] = useState({
@@ -246,21 +249,40 @@ const InspoPage = () => {
   // Combine user posts and sample trips
   const allTrips = [...userPosts, ...sampleTrips];
 
-  // Filter trips based on search query
+  // Filter trips based on search query and filters
   const filteredTrips = allTrips.filter((trip) => {
-    if (!searchQuery.trim()) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      trip.title.toLowerCase().includes(query) ||
-      trip.description.toLowerCase().includes(query) ||
-      trip.author.toLowerCase().includes(query) ||
-      trip.highlights.some(h => h.toLowerCase().includes(query)) ||
-      trip.stops.some(s => 
-        s.location.toLowerCase().includes(query) || 
-        s.description.toLowerCase().includes(query)
-      )
-    );
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        trip.title.toLowerCase().includes(query) ||
+        trip.description.toLowerCase().includes(query) ||
+        trip.author.toLowerCase().includes(query) ||
+        trip.highlights.some(h => h.toLowerCase().includes(query)) ||
+        trip.stops.some(s => 
+          s.location.toLowerCase().includes(query) || 
+          s.description.toLowerCase().includes(query)
+        );
+      if (!matchesSearch) return false;
+    }
+
+    // Duration filter
+    if (durationFilter !== "all") {
+      const durationNum = parseInt(trip.duration);
+      if (durationFilter === "short" && durationNum > 3) return false;
+      if (durationFilter === "medium" && (durationNum <= 3 || durationNum > 7)) return false;
+      if (durationFilter === "long" && durationNum <= 7) return false;
+    }
+
+    // Distance filter
+    if (distanceFilter !== "all") {
+      const distanceNum = parseInt(trip.distance);
+      if (distanceFilter === "short" && distanceNum > 400) return false;
+      if (distanceFilter === "medium" && (distanceNum <= 400 || distanceNum > 800)) return false;
+      if (distanceFilter === "long" && distanceNum <= 800) return false;
+    }
+
+    return true;
   });
 
   if (authLoading) {
@@ -457,7 +479,7 @@ const InspoPage = () => {
           </div>
           
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto space-y-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
@@ -467,6 +489,52 @@ const InspoPage = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 pr-4 h-12 text-base border-2 focus:border-primary"
               />
+            </div>
+
+            {/* Filter Bar */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Filter className="w-4 h-4" />
+                Filters:
+              </div>
+              
+              <Select value={durationFilter} onValueChange={setDurationFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Durations</SelectItem>
+                  <SelectItem value="short">Short (1-3 days)</SelectItem>
+                  <SelectItem value="medium">Medium (4-7 days)</SelectItem>
+                  <SelectItem value="long">Long (8+ days)</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={distanceFilter} onValueChange={setDistanceFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Distance" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Distances</SelectItem>
+                  <SelectItem value="short">Short (0-400 mi)</SelectItem>
+                  <SelectItem value="medium">Medium (400-800 mi)</SelectItem>
+                  <SelectItem value="long">Long (800+ mi)</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {(durationFilter !== "all" || distanceFilter !== "all") && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setDurationFilter("all");
+                    setDistanceFilter("all");
+                  }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Clear Filters
+                </Button>
+              )}
             </div>
           </div>
         </div>
