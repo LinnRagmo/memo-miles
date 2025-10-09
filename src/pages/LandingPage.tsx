@@ -48,7 +48,7 @@ const LandingPage = () => {
               onClick={() => navigate(box.route)}
               className="cursor-pointer bg-white/20 dark:bg-white/20 backdrop-blur-md border border-white/40 hover:scale-105 hover:bg-white/30 dark:hover:bg-white/30 transition-all duration-200 p-6 flex items-center justify-center text-center min-h-[100px] shadow-lg"
             >
-              <h2 className="text-2xl font-bold text-foreground">{box.title}</h2>
+              <h2 className="text-2xl font-bold text-white">{box.title}</h2>
             </Card>
           ))}
         </div>
