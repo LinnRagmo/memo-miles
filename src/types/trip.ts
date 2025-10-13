@@ -17,6 +17,11 @@ export interface Stop {
   activityIcon?: 'hiking' | 'food' | 'sightseeing' | 'camera' | 'coffee';
   notes?: string;
   coordinates?: [number, number];
+  // For drive type
+  startLocation?: string;
+  endLocation?: string;
+  drivingTime?: string;
+  distance?: string;
 }
 
 export interface Trip {

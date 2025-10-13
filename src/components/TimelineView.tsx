@@ -136,6 +136,16 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
                   )}
                 </div>
                 <h4 className="font-semibold text-foreground mb-1">{stop.location}</h4>
+                {stop.type === 'drive' && (stop.drivingTime || stop.distance) && (
+                  <div className="flex gap-3 mb-1">
+                    {stop.drivingTime && (
+                      <span className="text-sm text-muted-foreground">⏱ {stop.drivingTime}</span>
+                    )}
+                    {stop.distance && (
+                      <span className="text-sm text-muted-foreground">📍 {stop.distance}</span>
+                    )}
+                  </div>
+                )}
                 {stop.notes && (
                   <p className="text-sm text-muted-foreground">{stop.notes}</p>
                 )}

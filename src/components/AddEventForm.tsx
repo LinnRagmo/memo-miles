@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, Mountain, Utensils, Camera, Coffee, Eye } from "lucide-react";
+import { Plus, X, Mountain, Utensils, Camera, Coffee, Eye, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface AddEventFormProps {
   onAddEvent: (event: Omit<Stop, "id">) => void;
@@ -23,36 +25,77 @@ const activityIcons = [
 const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
+  const [startLocation, setStartLocation] = useState("");
+  const [endLocation, setEndLocation] = useState("");
   const [type, setType] = useState<"drive" | "activity" | "accommodation">("activity");
   const [activityIcon, setActivityIcon] = useState<"hiking" | "food" | "sightseeing" | "camera" | "coffee">("hiking");
   const [notes, setNotes] = useState("");
+  const [calculating, setCalculating] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!location) return;
-
-    // For accommodation, if time is evening (after 6 PM), suggest next day morning
-    let finalTime = time;
-    if (type === "accommodation" && time) {
-      const [hours] = time.split(':').map(Number);
-      if (hours >= 18) { // 6 PM or later
-        finalTime = "08:00"; // Next day morning
+    // Validation based on type
+    if (type === "drive") {
+      if (!startLocation || !endLocation) {
+        toast.error("Please enter both start and end locations for the drive");
+        return;
       }
+    } else {
+      if (!location) return;
     }
 
-    onAddEvent({
-      time: finalTime,
-      location,
+    let eventData: Omit<Stop, "id"> = {
+      time,
+      location: type === "drive" ? `${startLocation} to ${endLocation}` : location,
       type,
       activityIcon: type === "activity" ? activityIcon : undefined,
       notes: notes || undefined,
       coordinates: undefined,
-    });
+    };
+
+    // For drive type, calculate route
+    if (type === "drive") {
+      setCalculating(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('calculate-route', {
+          body: { startLocation, endLocation }
+        });
+
+        if (error) throw error;
+
+        if (data) {
+          eventData = {
+            ...eventData,
+            startLocation,
+            endLocation,
+            drivingTime: data.drivingTime,
+            distance: data.distance,
+          };
+        }
+      } catch (error: any) {
+        console.error("Error calculating route:", error);
+        toast.error("Could not calculate route. Adding without route details.");
+      } finally {
+        setCalculating(false);
+      }
+    }
+
+    // For accommodation, if time is evening (after 6 PM), suggest next day morning
+    if (type === "accommodation" && time) {
+      const [hours] = time.split(':').map(Number);
+      if (hours >= 18) {
+        eventData.time = "08:00";
+      }
+    }
+
+    onAddEvent(eventData);
 
     // Reset form
     setTime("");
     setLocation("");
+    setStartLocation("");
+    setEndLocation("");
     setType("activity");
     setActivityIcon("hiking");
     setNotes("");
@@ -134,20 +177,53 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
         </div>
       )}
 
-      <div className="mb-3">
-        <Label htmlFor="location" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
-          Location
-        </Label>
-        <Input
-          id="location"
-          type="text"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="Enter location..."
-          required
-          className="h-9"
-        />
-      </div>
+      {type === "drive" ? (
+        <>
+          <div className="mb-3">
+            <Label htmlFor="startLocation" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+              Start Location
+            </Label>
+            <Input
+              id="startLocation"
+              type="text"
+              value={startLocation}
+              onChange={(e) => setStartLocation(e.target.value)}
+              placeholder="Enter start location..."
+              required
+              className="h-9"
+            />
+          </div>
+          <div className="mb-3">
+            <Label htmlFor="endLocation" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+              End Location
+            </Label>
+            <Input
+              id="endLocation"
+              type="text"
+              value={endLocation}
+              onChange={(e) => setEndLocation(e.target.value)}
+              placeholder="Enter end location..."
+              required
+              className="h-9"
+            />
+          </div>
+        </>
+      ) : (
+        <div className="mb-3">
+          <Label htmlFor="location" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+            Location
+          </Label>
+          <Input
+            id="location"
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Enter location..."
+            required
+            className="h-9"
+          />
+        </div>
+      )}
 
       <div className="mb-4">
         <Label htmlFor="notes" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
@@ -164,11 +240,20 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
       </div>
 
       <div className="flex gap-2">
-        <Button type="submit" className="flex-1 h-9 font-bold uppercase text-xs tracking-wider">
-          <Plus className="w-4 h-4 mr-1" />
-          Add Event
+        <Button type="submit" disabled={calculating} className="flex-1 h-9 font-bold uppercase text-xs tracking-wider">
+          {calculating ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              Calculating Route...
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4 mr-1" />
+              Add Event
+            </>
+          )}
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel} className="h-9 px-4 font-bold uppercase text-xs tracking-wider">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={calculating} className="h-9 px-4 font-bold uppercase text-xs tracking-wider">
           Cancel
         </Button>
       </div>
