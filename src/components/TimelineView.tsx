@@ -127,13 +127,13 @@ const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, onDelet
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="relative z-10 h-8 w-8 rounded-full bg-background border-2 border-border hover:border-primary hover:bg-primary/10 transition-all opacity-0 group-hover:opacity-100"
+                    className="relative z-10 h-8 w-8 rounded-full bg-background border-2 border-dashed border-border hover:border-primary hover:bg-primary/10 hover:scale-110 transition-all"
                     onClick={(e) => {
                       e.stopPropagation();
                       onAddAfter(index);
                     }}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 text-muted-foreground hover:text-primary" />
                   </Button>
                 </div>
               )}
