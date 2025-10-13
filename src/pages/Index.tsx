@@ -202,9 +202,30 @@ const Index = () => {
     toast.success("Event added successfully!");
   };
 
-  const handleUpdateEvent = (dayId: string, stopId: string, updatedStop: Omit<Stop, "id">) => {
+  const handleUpdateEvent = (dayId: string, stopId: string, updatedStop: any) => {
     if (!trip) return;
 
+    // Handle reordering case
+    if (updatedStop && 'stops' in updatedStop && Array.isArray(updatedStop.stops)) {
+      const updatedTrip = {
+        ...trip,
+        days: trip.days.map(day =>
+          day.id === dayId ? { ...day, stops: updatedStop.stops } : day
+        )
+      };
+      setTrip(updatedTrip);
+      saveTrip(updatedTrip);
+
+      // Update selectedDay
+      setSelectedDay(prev => 
+        prev && prev.id === dayId ? { ...prev, stops: updatedStop.stops } : prev
+      );
+
+      toast.success("Activities reordered!");
+      return;
+    }
+
+    // Handle normal update case
     const updatedTrip = {
       ...trip,
       days: trip.days.map(day =>

@@ -13,7 +13,7 @@ interface DayDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddEvent: (dayId: string, event: Omit<Stop, "id">, insertAtIndex?: number) => void;
-  onUpdateEvent: (dayId: string, stopId: string, updatedStop: Omit<Stop, "id">) => void;
+  onUpdateEvent: (dayId: string, stopId: string, updatedStop: any) => void;
   onDeleteEvent: (dayId: string, stopId: string) => void;
 }
 
@@ -135,6 +135,9 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
               }}
               onDeleteStop={handleDeleteEvent}
               onAddAfter={handleAddAfter}
+              onReorderStops={(reorderedStops) => {
+                onUpdateEvent(day.id, '', { stops: reorderedStops } as any);
+              }}
             />
           </div>
           
