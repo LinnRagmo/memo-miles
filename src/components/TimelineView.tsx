@@ -1,5 +1,5 @@
 import { TripDay, Stop } from "@/types/trip";
-import { Car, MapPin, Coffee, Camera, Pencil, Trash2, Plus, GripVertical } from "lucide-react";
+import { Car, MapPin, Coffee, Camera, Pencil, Trash2, Plus, GripVertical, Hotel, Mountain, Utensils, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRef, useEffect } from "react";
@@ -70,7 +70,7 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const Icon = getStopIcon(stop.type);
+  const Icon = getStopIcon(stop.type, stop.activityIcon);
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -126,6 +126,11 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
                   {stop.type === 'activity' && (
                     <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
                       Activity
+                    </span>
+                  )}
+                  {stop.type === 'accommodation' && (
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-secondary/10 text-secondary">
+                      Accommodation
                     </span>
                   )}
                 </div>
@@ -194,14 +199,29 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
   );
 };
 
-const getStopIcon = (type: Stop['type']) => {
+const getStopIcon = (type: Stop['type'], activityIcon?: Stop['activityIcon']) => {
+  if (type === 'activity' && activityIcon) {
+    switch (activityIcon) {
+      case 'hiking':
+        return Mountain;
+      case 'food':
+        return Utensils;
+      case 'sightseeing':
+        return Eye;
+      case 'camera':
+        return Camera;
+      case 'coffee':
+        return Coffee;
+    }
+  }
+  
   switch (type) {
     case 'drive':
       return Car;
     case 'activity':
       return Camera;
-    case 'stop':
-      return Coffee;
+    case 'accommodation':
+      return Hotel;
     default:
       return MapPin;
   }

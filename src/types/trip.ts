@@ -13,7 +13,8 @@ export interface Stop {
   id: string;
   time: string;
   location: string;
-  type: 'drive' | 'activity' | 'stop';
+  type: 'drive' | 'activity' | 'accommodation';
+  activityIcon?: 'hiking' | 'food' | 'sightseeing' | 'camera' | 'coffee';
   notes?: string;
   coordinates?: [number, number];
 }

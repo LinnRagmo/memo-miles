@@ -5,17 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Mountain, Utensils, Camera, Coffee, Eye } from "lucide-react";
 
 interface AddEventFormProps {
   onAddEvent: (event: Omit<Stop, "id">) => void;
   onCancel: () => void;
 }
 
+const activityIcons = [
+  { value: 'hiking', label: 'Hiking', icon: Mountain },
+  { value: 'food', label: 'Food/Dining', icon: Utensils },
+  { value: 'sightseeing', label: 'Sightseeing', icon: Eye },
+  { value: 'camera', label: 'Photography', icon: Camera },
+  { value: 'coffee', label: 'Coffee/Cafe', icon: Coffee },
+] as const;
+
 const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
-  const [type, setType] = useState<"drive" | "activity" | "stop">("activity");
+  const [type, setType] = useState<"drive" | "activity" | "accommodation">("activity");
+  const [activityIcon, setActivityIcon] = useState<"hiking" | "food" | "sightseeing" | "camera" | "coffee">("hiking");
   const [notes, setNotes] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -23,18 +32,29 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     
     if (!location) return;
 
+    // For accommodation, if time is evening (after 6 PM), suggest next day morning
+    let finalTime = time;
+    if (type === "accommodation" && time) {
+      const [hours] = time.split(':').map(Number);
+      if (hours >= 18) { // 6 PM or later
+        finalTime = "08:00"; // Next day morning
+      }
+    }
+
     onAddEvent({
-      time,
+      time: finalTime,
       location,
       type,
+      activityIcon: type === "activity" ? activityIcon : undefined,
       notes: notes || undefined,
-      coordinates: undefined, // Users can add coordinates later
+      coordinates: undefined,
     });
 
     // Reset form
     setTime("");
     setLocation("");
     setType("activity");
+    setActivityIcon("hiking");
     setNotes("");
   };
 
@@ -53,9 +73,9 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-        <Label htmlFor="time" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
-          Time (Optional)
-        </Label>
+          <Label htmlFor="time" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+            Time (Optional)
+          </Label>
           <Input
             id="time"
             type="time"
@@ -64,24 +84,55 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
             className="h-9"
             placeholder="Optional"
           />
+          {type === "accommodation" && time && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {parseInt(time.split(':')[0]) >= 18 ? "Will show as next morning" : "Check-in time"}
+            </p>
+          )}
         </div>
 
         <div>
           <Label htmlFor="type" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
             Type
           </Label>
-          <Select value={type} onValueChange={(value: "drive" | "activity" | "stop") => setType(value)}>
+          <Select value={type} onValueChange={(value: "drive" | "activity" | "accommodation") => setType(value)}>
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="activity">Activity</SelectItem>
               <SelectItem value="drive">Drive</SelectItem>
-              <SelectItem value="stop">Stop</SelectItem>
+              <SelectItem value="accommodation">Accommodation</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
+
+      {type === "activity" && (
+        <div className="mb-3">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+            Activity Icon
+          </Label>
+          <div className="grid grid-cols-5 gap-2">
+            {activityIcons.map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setActivityIcon(value)}
+                className={`flex flex-col items-center justify-center p-2 rounded-md border transition-all ${
+                  activityIcon === value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border hover:border-primary/50 hover:bg-muted'
+                }`}
+                title={label}
+              >
+                <Icon className="w-5 h-5 mb-1" />
+                <span className="text-[10px] leading-tight text-center">{label.split('/')[0]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mb-3">
         <Label htmlFor="location" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">

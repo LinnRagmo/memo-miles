@@ -5,7 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, X } from "lucide-react";
+import { Save, X, Mountain, Utensils, Camera, Coffee, Eye } from "lucide-react";
+
+const activityIcons = [
+  { value: 'hiking', label: 'Hiking', icon: Mountain },
+  { value: 'food', label: 'Food/Dining', icon: Utensils },
+  { value: 'sightseeing', label: 'Sightseeing', icon: Eye },
+  { value: 'camera', label: 'Photography', icon: Camera },
+  { value: 'coffee', label: 'Coffee/Cafe', icon: Coffee },
+] as const;
 
 interface EditEventFormProps {
   stop: Stop;
@@ -16,7 +24,8 @@ interface EditEventFormProps {
 const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
   const [time, setTime] = useState(stop.time);
   const [location, setLocation] = useState(stop.location);
-  const [type, setType] = useState<"drive" | "activity" | "stop">(stop.type);
+  const [type, setType] = useState<"drive" | "activity" | "accommodation">(stop.type);
+  const [activityIcon, setActivityIcon] = useState<"hiking" | "food" | "sightseeing" | "camera" | "coffee">(stop.activityIcon || "hiking");
   const [notes, setNotes] = useState(stop.notes || "");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -28,6 +37,7 @@ const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
       time,
       location,
       type,
+      activityIcon: type === "activity" ? activityIcon : undefined,
       notes: notes || undefined,
       coordinates: stop.coordinates, // Keep existing coordinates
     });
@@ -64,18 +74,44 @@ const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
           <Label htmlFor="edit-type" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
             Type
           </Label>
-          <Select value={type} onValueChange={(value: "drive" | "activity" | "stop") => setType(value)}>
+          <Select value={type} onValueChange={(value: "drive" | "activity" | "accommodation") => setType(value)}>
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="activity">Activity</SelectItem>
               <SelectItem value="drive">Drive</SelectItem>
-              <SelectItem value="stop">Stop</SelectItem>
+              <SelectItem value="accommodation">Accommodation</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
+
+      {type === "activity" && (
+        <div className="mb-3">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+            Activity Icon
+          </Label>
+          <div className="grid grid-cols-5 gap-2">
+            {activityIcons.map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setActivityIcon(value)}
+                className={`flex flex-col items-center justify-center p-2 rounded-md border transition-all ${
+                  activityIcon === value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border hover:border-primary/50 hover:bg-muted'
+                }`}
+                title={label}
+              >
+                <Icon className="w-5 h-5 mb-1" />
+                <span className="text-[10px] leading-tight text-center">{label.split('/')[0]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mb-3">
         <Label htmlFor="edit-location" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">

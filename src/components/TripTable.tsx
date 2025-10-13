@@ -28,7 +28,7 @@ const getEventIcon = (type: string) => {
   switch (type) {
     case "drive":
       return <Car className="w-4 h-4" />;
-    case "stop":
+    case "accommodation":
       return <Hotel className="w-4 h-4" />;
     case "activity":
       return <Camera className="w-4 h-4" />;
