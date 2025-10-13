@@ -86,7 +86,7 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
           <div className="absolute left-5 top-12 w-0.5 h-[calc(100%+3rem)] -ml-px bg-border" />
         )}
         
-        {/* Drag Handle & Icon */}
+        {/* Drag Handle & Icon with Number */}
         <div className="flex flex-col items-center gap-1">
           <button
             {...attributes}
@@ -96,12 +96,14 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
           >
             <GripVertical className="w-4 h-4 text-muted-foreground" />
           </button>
-          <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
-            stop.type === 'drive' ? 'bg-primary text-primary-foreground' :
-            stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
-            'bg-card border-2 border-border text-muted-foreground'
-          } ${isHighlighted ? 'ring-4 ring-primary/30 scale-110' : 'group-hover:scale-105'}`}>
-            <Icon className="w-5 h-5" />
+          <div className="relative">
+            <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
+              stop.type === 'drive' ? 'bg-primary text-primary-foreground' :
+              stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
+              'bg-card border-2 border-border text-muted-foreground'
+            } ${isHighlighted ? 'ring-4 ring-primary/30 scale-110' : 'group-hover:scale-105'}`}>
+              <span className="text-sm font-semibold">{index + 1}</span>
+            </div>
           </div>
         </div>
         
