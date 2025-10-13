@@ -96,27 +96,25 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
           >
             <GripVertical className="w-4 h-4 text-muted-foreground" />
           </button>
-          <div className="relative">
-            <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
-              stop.type === 'drive' ? 'bg-primary text-primary-foreground' :
-              stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
-              'bg-card border-2 border-border text-muted-foreground'
-            } ${isHighlighted ? 'ring-4 ring-primary/30 scale-110' : 'group-hover:scale-105'}`}>
-              <Icon className="w-5 h-5" />
-            </div>
-            <div className="absolute -top-1 -right-1 bg-background border-2 border-primary rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
-              <span className="text-xs font-bold text-primary">{index + 1}</span>
-            </div>
+          <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
+            stop.type === 'drive' ? 'bg-primary text-primary-foreground' :
+            stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
+            'bg-card border-2 border-border text-muted-foreground'
+          } ${isHighlighted ? 'ring-4 ring-primary/30 scale-110' : 'group-hover:scale-105'}`}>
+            <Icon className="w-5 h-5" />
           </div>
         </div>
         
         {/* Content */}
         <div className="flex-1 pb-6">
-          <div className={`bg-card rounded-lg border p-4 shadow-soft transition-all ${
+          <div className={`relative bg-card rounded-lg border p-4 shadow-soft transition-all ${
             isHighlighted 
               ? 'border-primary shadow-medium ring-2 ring-primary/20' 
               : 'border-border group-hover:shadow-medium group-hover:border-primary/50'
           }`}>
+            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center shadow-sm font-bold text-sm">
+              {index + 1}
+            </div>
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
