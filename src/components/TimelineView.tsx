@@ -1,5 +1,5 @@
 import { TripDay, Stop } from "@/types/trip";
-import { Car, MapPin, Coffee, Camera, Pencil, Trash2 } from "lucide-react";
+import { Car, MapPin, Coffee, Camera, Pencil, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TimelineViewProps {
@@ -8,6 +8,7 @@ interface TimelineViewProps {
   highlightedStopId?: string;
   onEditStop?: (stopId: string) => void;
   onDeleteStop?: (stopId: string) => void;
+  onAddAfter?: (index: number) => void;
 }
 
 const getStopIcon = (type: Stop['type']) => {
@@ -23,27 +24,27 @@ const getStopIcon = (type: Stop['type']) => {
   }
 };
 
-const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, onDeleteStop }: TimelineViewProps) => {
+const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, onDeleteStop, onAddAfter }: TimelineViewProps) => {
   return (
     <div className="p-6">
-      <div className="space-y-6">
+      <div className="space-y-2">
         {day.stops.map((stop, index) => {
           const Icon = getStopIcon(stop.type);
           const isLast = index === day.stops.length - 1;
           const isHighlighted = highlightedStopId === stop.id;
           
           return (
-            <div
-              key={stop.id}
-              className={`relative flex gap-4 group cursor-pointer transition-all ${
-                isHighlighted ? 'scale-[1.02]' : ''
-              }`}
-              onClick={() => onStopClick?.(stop.id)}
-            >
-              {/* Timeline line */}
-              {!isLast && (
-                <div className="absolute left-5 top-12 w-0.5 h-full -ml-px bg-border" />
-              )}
+            <div key={stop.id}>
+              <div
+                className={`relative flex gap-4 group cursor-pointer transition-all ${
+                  isHighlighted ? 'scale-[1.02]' : ''
+                }`}
+                onClick={() => onStopClick?.(stop.id)}
+              >
+                {/* Timeline line */}
+                {!isLast && (
+                  <div className="absolute left-5 top-12 w-0.5 h-[calc(100%+2rem)] -ml-px bg-border" />
+                )}
               
               {/* Icon */}
               <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
@@ -117,6 +118,25 @@ const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, onDelet
                   </div>
                 </div>
               </div>
+              </div>
+              
+              {/* Add button between stops */}
+              {!isLast && onAddAfter && (
+                <div className="relative flex justify-center my-2">
+                  <div className="absolute left-5 top-0 w-0.5 h-full -ml-px bg-border" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative z-10 h-8 w-8 rounded-full bg-background border-2 border-border hover:border-primary hover:bg-primary/10 transition-all opacity-0 group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddAfter(index);
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           );
         })}

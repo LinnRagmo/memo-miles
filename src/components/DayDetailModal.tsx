@@ -12,7 +12,7 @@ interface DayDetailModalProps {
   day: TripDay | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddEvent: (dayId: string, event: Omit<Stop, "id">) => void;
+  onAddEvent: (dayId: string, event: Omit<Stop, "id">, insertAtIndex?: number) => void;
   onUpdateEvent: (dayId: string, stopId: string, updatedStop: Omit<Stop, "id">) => void;
   onDeleteEvent: (dayId: string, stopId: string) => void;
 }
@@ -20,13 +20,21 @@ interface DayDetailModalProps {
 const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDeleteEvent }: DayDetailModalProps) => {
   const [highlightedStopId, setHighlightedStopId] = useState<string | undefined>();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [insertAtIndex, setInsertAtIndex] = useState<number | undefined>();
   const [editingStopId, setEditingStopId] = useState<string | null>(null);
 
   if (!day) return null;
 
   const handleAddEvent = (event: Omit<Stop, "id">) => {
-    onAddEvent(day.id, event);
+    onAddEvent(day.id, event, insertAtIndex);
     setShowAddForm(false);
+    setInsertAtIndex(undefined);
+  };
+  
+  const handleAddAfter = (index: number) => {
+    setEditingStopId(null);
+    setInsertAtIndex(index + 1);
+    setShowAddForm(true);
   };
 
   const handleEditEvent = (stopId: string, updatedStop: Omit<Stop, "id">) => {
@@ -96,17 +104,23 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
                 />
               ) : !showAddForm ? (
                 <Button
-                  onClick={() => setShowAddForm(true)}
+                  onClick={() => {
+                    setInsertAtIndex(undefined);
+                    setShowAddForm(true);
+                  }}
                   variant="outline"
                   className="w-full mb-4 h-10 font-bold uppercase text-xs tracking-wider"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Event
+                  Add Event {insertAtIndex !== undefined ? `(Position ${insertAtIndex + 1})` : ''}
                 </Button>
               ) : (
                 <AddEventForm
                   onAddEvent={handleAddEvent}
-                  onCancel={() => setShowAddForm(false)}
+                  onCancel={() => {
+                    setShowAddForm(false);
+                    setInsertAtIndex(undefined);
+                  }}
                 />
               )}
             </div>
@@ -116,9 +130,11 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
               highlightedStopId={highlightedStopId}
               onEditStop={(stopId) => {
                 setShowAddForm(false);
+                setInsertAtIndex(undefined);
                 setEditingStopId(stopId);
               }}
               onDeleteStop={handleDeleteEvent}
+              onAddAfter={handleAddAfter}
             />
           </div>
           

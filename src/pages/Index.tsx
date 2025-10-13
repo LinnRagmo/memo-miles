@@ -159,7 +159,7 @@ const Index = () => {
     toast.success("New day added to your trip!");
   };
 
-  const handleAddEvent = (dayId: string, event: Omit<Stop, "id">) => {
+  const handleAddEvent = (dayId: string, event: Omit<Stop, "id">, insertAtIndex?: number) => {
     if (!trip) return;
 
     const newStop: Stop = {
@@ -169,21 +169,35 @@ const Index = () => {
 
     const updatedTrip = {
       ...trip,
-      days: trip.days.map(day =>
-        day.id === dayId
-          ? { ...day, stops: [...day.stops, newStop] }
-          : day
-      )
+      days: trip.days.map(day => {
+        if (day.id === dayId) {
+          const newStops = [...day.stops];
+          if (insertAtIndex !== undefined) {
+            newStops.splice(insertAtIndex, 0, newStop);
+          } else {
+            newStops.push(newStop);
+          }
+          return { ...day, stops: newStops };
+        }
+        return day;
+      })
     };
     setTrip(updatedTrip);
     saveTrip(updatedTrip);
 
     // Update selectedDay to reflect the new stop
-    setSelectedDay(prev => 
-      prev && prev.id === dayId
-        ? { ...prev, stops: [...prev.stops, newStop] }
-        : prev
-    );
+    setSelectedDay(prev => {
+      if (prev && prev.id === dayId) {
+        const newStops = [...prev.stops];
+        if (insertAtIndex !== undefined) {
+          newStops.splice(insertAtIndex, 0, newStop);
+        } else {
+          newStops.push(newStop);
+        }
+        return { ...prev, stops: newStops };
+      }
+      return prev;
+    });
 
     toast.success("Event added successfully!");
   };
