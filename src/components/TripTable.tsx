@@ -198,26 +198,63 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity }: TripTableP
     const fromDayId = active.data.current.dayId;
     const toDayId = over.id as string;
     const stopId = active.data.current.stop.id;
+    const movingStop = active.data.current.stop as Stop;
 
     if (fromDayId !== toDayId) {
-      // Check time conflicts
       const targetDay = days.find(d => d.id === toDayId);
-      const movingStop = active.data.current.stop;
       
-      if (targetDay && movingStop.time) {
-        const hasConflict = targetDay.stops.some(stop => 
-          stop.time && Math.abs(new Date(`2000-01-01 ${stop.time}`).getTime() - new Date(`2000-01-01 ${movingStop.time}`).getTime()) < 300000 // 5 minutes
-        );
+      if (!targetDay) return;
+
+      // If the activity has no time, allow the move
+      if (!movingStop.time) {
+        onMoveActivity(fromDayId, toDayId, stopId);
+        toast.success("Activity moved to another day");
+        return;
+      }
+
+      // Parse the moving stop's time
+      const movingTime = parseTimeToMinutes(movingStop.time);
+
+      // Find the correct position in target day based on time
+      let insertIndex = 0;
+      let canInsert = true;
+
+      for (let i = 0; i < targetDay.stops.length; i++) {
+        const stop = targetDay.stops[i];
         
-        if (hasConflict) {
-          toast.error("Time conflict: Activity time overlaps with existing activities");
+        if (!stop.time) {
+          insertIndex = i + 1;
+          continue;
+        }
+
+        const stopTime = parseTimeToMinutes(stop.time);
+
+        // Check if times match exactly (conflict)
+        if (stopTime === movingTime) {
+          canInsert = false;
+          toast.error("Time conflict: An activity already exists at this time");
           return;
+        }
+
+        // Find insertion point
+        if (stopTime < movingTime) {
+          insertIndex = i + 1;
+        } else {
+          break;
         }
       }
 
-      onMoveActivity(fromDayId, toDayId, stopId);
-      toast.success("Activity moved to another day");
+      if (canInsert) {
+        onMoveActivity(fromDayId, toDayId, stopId, insertIndex);
+        toast.success("Activity moved and placed in chronological order");
+      }
     }
+  };
+
+  // Helper function to parse time string to minutes since midnight
+  const parseTimeToMinutes = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
   };
 
   if (days.length === 0) {

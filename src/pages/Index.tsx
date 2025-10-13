@@ -298,7 +298,7 @@ const Index = () => {
     handleAddEvent(selectedDay.id, newStop);
   };
 
-  const handleMoveActivity = (fromDayId: string, toDayId: string, stopId: string) => {
+  const handleMoveActivity = (fromDayId: string, toDayId: string, stopId: string, targetIndex?: number) => {
     if (!trip) return;
 
     // Find the stop to move
@@ -307,7 +307,7 @@ const Index = () => {
     
     if (!stopToMove) return;
 
-    // Remove from old day and add to new day
+    // Remove from old day and add to new day at specific index
     const updatedTrip = {
       ...trip,
       days: trip.days.map(day => {
@@ -315,7 +315,13 @@ const Index = () => {
           return { ...day, stops: day.stops.filter(s => s.id !== stopId) };
         }
         if (day.id === toDayId) {
-          return { ...day, stops: [...day.stops, stopToMove] };
+          const newStops = [...day.stops];
+          if (targetIndex !== undefined) {
+            newStops.splice(targetIndex, 0, stopToMove);
+          } else {
+            newStops.push(stopToMove);
+          }
+          return { ...day, stops: newStops };
         }
         return day;
       })
