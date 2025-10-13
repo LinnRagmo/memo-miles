@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { fetchSunriseSunset, parseDate } from "@/lib/sunriseSunset";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format } from "date-fns";
+import { format, eachDayOfInterval, parseISO } from "date-fns";
 
 // Sample data removed - trips are now loaded from database
 
@@ -48,15 +48,43 @@ const Index = () => {
 
         // Convert database format to Trip format
         const tripData = data.trip_data as unknown as { days: TripDay[] };
+        
+        // Generate days automatically based on start and end dates
+        let daysArray = tripData?.days || [];
+        
+        // If no days exist, generate them from the date range
+        if (daysArray.length === 0) {
+          const startDate = parseISO(data.start_date);
+          const endDate = parseISO(data.end_date);
+          const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
+          
+          daysArray = dateRange.map((date, index) => ({
+            id: `day-${index + 1}`,
+            date: format(date, "MMM d, yyyy"),
+            drivingTime: "",
+            activities: "",
+            notes: "",
+            stops: []
+          }));
+        }
+        
         const loadedTrip: Trip = {
           id: data.id,
           title: data.title,
           startDate: format(new Date(data.start_date), "MMM d, yyyy"),
           endDate: format(new Date(data.end_date), "MMM d, yyyy"),
-          days: tripData?.days || [],
+          days: daysArray,
         };
 
         setTrip(loadedTrip);
+        
+        // Save generated days back to database if they were created
+        if (tripData?.days.length === 0 && daysArray.length > 0) {
+          await supabase
+            .from("trips")
+            .update({ trip_data: { days: daysArray } as any })
+            .eq("id", data.id);
+        }
       } catch (error: any) {
         toast.error("Failed to load trip");
         navigate("/plan");
@@ -134,30 +162,6 @@ const Index = () => {
     saveTrip(updatedTrip);
   };
 
-  const handleAddDay = () => {
-    if (!trip) return;
-
-    const lastDay = trip.days[trip.days.length - 1];
-    const newDate = lastDay ? new Date(lastDay.date) : new Date();
-    if (lastDay) newDate.setDate(newDate.getDate() + 1);
-    
-    const newDay: TripDay = {
-      id: `day-${trip.days.length + 1}`,
-      date: newDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      drivingTime: "",
-      activities: "",
-      notes: "",
-      stops: []
-    };
-
-    const updatedTrip = {
-      ...trip,
-      days: [...trip.days, newDay]
-    };
-    setTrip(updatedTrip);
-    saveTrip(updatedTrip);
-    toast.success("New day added to your trip!");
-  };
 
   const handleAddEvent = (dayId: string, event: Omit<Stop, "id">, insertAtIndex?: number) => {
     if (!trip) return;
@@ -361,7 +365,6 @@ const Index = () => {
             title={trip.title}
             startDate={trip.startDate}
             endDate={trip.endDate}
-            onAddDay={handleAddDay}
             onShowTotalRoute={() => setIsTotalRouteOpen(true)}
           />
           
