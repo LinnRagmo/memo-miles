@@ -26,7 +26,8 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <TopBar />
-            <Routes>
+            <div className="pt-14">
+              <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/plan" element={<MyTripsPage />} />
@@ -36,7 +37,8 @@ const App = () => (
               <Route path="/journal/:tripId" element={<JournalPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
+              </Routes>
+            </div>
           </BrowserRouter>
         </FavoritesProvider>
       </AuthProvider>
