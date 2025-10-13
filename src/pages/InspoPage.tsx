@@ -115,7 +115,7 @@ const InspoPage = () => {
   // Auth check
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate("/auth");
+      navigate(`/auth?redirect=/inspo`);
     }
   }, [user, authLoading, navigate]);
 

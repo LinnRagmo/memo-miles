@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +80,7 @@ const JournalPage = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { tripId } = useParams();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
@@ -93,13 +94,15 @@ const JournalPage = () => {
   // Auth check
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate("/auth");
+      navigate(`/auth?redirect=/journal/${tripId}`);
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, tripId]);
 
   // Load entries from localStorage on mount, or use template if empty
   useEffect(() => {
-    const stored = localStorage.getItem("journal-entries");
+    if (!tripId) return;
+    
+    const stored = localStorage.getItem(`journal-entries-${tripId}`);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -115,13 +118,13 @@ const JournalPage = () => {
     } else {
       setEntries(templateEntries);
     }
-  }, []);
+  }, [tripId]);
 
   // Save entries to localStorage whenever they change (but not on initial mount)
   useEffect(() => {
-    if (entries.length > 0) {
+    if (entries.length > 0 && tripId) {
       try {
-        localStorage.setItem("journal-entries", JSON.stringify(entries));
+        localStorage.setItem(`journal-entries-${tripId}`, JSON.stringify(entries));
       } catch (error) {
         if (error instanceof DOMException && error.name === 'QuotaExceededError') {
           toast({
@@ -134,7 +137,7 @@ const JournalPage = () => {
         }
       }
     }
-  }, [entries, toast]);
+  }, [entries, tripId, toast]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

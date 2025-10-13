@@ -7,6 +7,7 @@ import LandingPage from "./pages/LandingPage";
 import Index from "./pages/Index";
 import InspoPage from "./pages/InspoPage";
 import JournalPage from "./pages/JournalPage";
+import JournalSelectPage from "./pages/JournalSelectPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import MyTripsPage from "./pages/MyTripsPage";
@@ -31,7 +32,8 @@ const App = () => (
               <Route path="/plan" element={<MyTripsPage />} />
               <Route path="/plan/:tripId" element={<Index />} />
               <Route path="/inspo" element={<InspoPage />} />
-              <Route path="/journal" element={<JournalPage />} />
+              <Route path="/journal-select" element={<JournalSelectPage />} />
+              <Route path="/journal/:tripId" element={<JournalPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

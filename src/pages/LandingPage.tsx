@@ -9,17 +9,17 @@ const LandingPage = () => {
   const boxes = [
     {
       title: "Inspo",
-      route: "/auth",
+      route: "/inspo",
       icon: Lightbulb,
     },
     {
       title: "Plan",
-      route: "/auth",
+      route: "/plan",
       icon: Map,
     },
     {
       title: "Journal",
-      route: "/auth",
+      route: "/journal-select",
       icon: BookOpen,
     },
   ];

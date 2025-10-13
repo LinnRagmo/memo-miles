@@ -12,7 +12,7 @@ const TopBar = () => {
     { title: "Home", path: "/" },
     { title: "Inspo", path: "/inspo" },
     { title: "Plan", path: "/plan" },
-    { title: "Journal", path: "/journal" },
+    { title: "Journal", path: "/journal-select" },
   ];
 
   const handleAuth = async () => {

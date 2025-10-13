@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,10 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  
+  const redirectTo = searchParams.get("redirect") || "/plan";
 
   useEffect(() => {
     // Set up auth listener
@@ -28,7 +31,7 @@ const AuthPage = () => {
       (_event, session) => {
         setSession(session);
         if (session) {
-          navigate("/plan");
+          navigate(redirectTo);
         }
       }
     );
@@ -37,12 +40,12 @@ const AuthPage = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        navigate("/plan");
+        navigate(redirectTo);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, redirectTo]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +94,7 @@ const AuthPage = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/plan`,
+            emailRedirectTo: `${window.location.origin}${redirectTo}`,
           },
         });
         if (error) {
