@@ -2,7 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-import { MapPin, Clock, User, Calendar, Heart, Trash2 } from "lucide-react";
+import { MapPin, Clock, User, Calendar, Heart, Trash2, Navigation } from "lucide-react";
+import MapView from "./MapView";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RoadTripPost {
   id: string;
@@ -37,7 +40,73 @@ const TripDetailModal = ({
   isFavorite,
   isUserPost 
 }: TripDetailModalProps) => {
+  const [stopDistances, setStopDistances] = useState<{ [key: number]: { distance: string; duration: string } }>({});
+  const [stopCoordinates, setStopCoordinates] = useState<{ [key: number]: [number, number] }>({});
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  useEffect(() => {
+    if (!trip || !isOpen) return;
+
+    const calculateDistances = async () => {
+      setIsCalculating(true);
+      const distances: { [key: number]: { distance: string; duration: string } } = {};
+      const coordinates: { [key: number]: [number, number] } = {};
+
+      for (let i = 0; i < trip.stops.length; i++) {
+        const stop = trip.stops[i];
+        
+        // Geocode current stop
+        try {
+          const geocodeResponse = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(stop.location)}.json?access_token=${import.meta.env.VITE_MAPBOX_TOKEN || ''}`
+          );
+          const geocodeData = await geocodeResponse.json();
+          if (geocodeData.features && geocodeData.features.length > 0) {
+            coordinates[i] = geocodeData.features[0].center;
+          }
+        } catch (error) {
+          console.error(`Error geocoding ${stop.location}:`, error);
+        }
+
+        // Calculate distance to next stop
+        if (i < trip.stops.length - 1) {
+          try {
+            const { data, error } = await supabase.functions.invoke('calculate-route', {
+              body: { 
+                start: trip.stops[i].location, 
+                end: trip.stops[i + 1].location 
+              }
+            });
+
+            if (!error && data) {
+              distances[i] = {
+                distance: data.distance,
+                duration: data.duration
+              };
+            }
+          } catch (error) {
+            console.error(`Error calculating route between stops ${i} and ${i + 1}:`, error);
+          }
+        }
+      }
+
+      setStopDistances(distances);
+      setStopCoordinates(coordinates);
+      setIsCalculating(false);
+    };
+
+    calculateDistances();
+  }, [trip, isOpen]);
+
   if (!trip) return null;
+
+  const mapStops = Object.entries(stopCoordinates).map(([index, coords]) => ({
+    id: `stop-${index}`,
+    location: trip.stops[parseInt(index)].location,
+    coordinates: coords,
+    time: "00:00",
+    type: 'activity' as const
+  }));
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -118,6 +187,19 @@ const TripDetailModal = ({
             </div>
           </div>
 
+          {/* Map */}
+          {mapStops.length > 0 && (
+            <div>
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <div className="w-1 h-6 bg-primary rounded-full" />
+                Route Map
+              </h3>
+              <div className="h-80 rounded-lg overflow-hidden border">
+                <MapView stops={mapStops} />
+              </div>
+            </div>
+          )}
+
           {/* Stops */}
           <div>
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
@@ -126,30 +208,46 @@ const TripDetailModal = ({
             </h3>
             <div className="space-y-4">
               {trip.stops.map((stop, index) => (
-                <div key={index} className="flex gap-4 items-start group/stop">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 pt-1">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-foreground text-lg mb-1 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-primary" />
-                          {stop.location}
-                        </h4>
-                        <p className="text-muted-foreground leading-relaxed">{stop.description}</p>
+                <div key={index}>
+                  <div className="flex gap-4 items-start group/stop">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 pt-1">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h4 className="font-bold text-foreground text-lg mb-1 flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-primary" />
+                            {stop.location}
+                          </h4>
+                          <p className="text-muted-foreground leading-relaxed">{stop.description}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="gap-2 hover:bg-primary/10 hover:text-primary"
+                          onClick={() => onSaveFavorite(stop, trip.title)}
+                        >
+                          <Heart className={`w-4 h-4 ${isFavorite(`${trip.title}-${stop.location}`.replace(/\s+/g, '-').toLowerCase()) ? 'fill-primary text-primary' : ''}`} />
+                          Save
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="gap-2 hover:bg-primary/10 hover:text-primary"
-                        onClick={() => onSaveFavorite(stop, trip.title)}
-                      >
-                        <Heart className={`w-4 h-4 ${isFavorite(`${trip.title}-${stop.location}`.replace(/\s+/g, '-').toLowerCase()) ? 'fill-primary text-primary' : ''}`} />
-                        Save
-                      </Button>
                     </div>
                   </div>
+                  
+                  {/* Distance to next stop */}
+                  {index < trip.stops.length - 1 && (
+                    <div className="ml-14 mt-3 mb-1 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Navigation className="w-4 h-4" />
+                      {isCalculating ? (
+                        <span>Calculating route...</span>
+                      ) : stopDistances[index] ? (
+                        <span>
+                          {stopDistances[index].distance} • {stopDistances[index].duration}
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

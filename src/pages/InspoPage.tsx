@@ -619,17 +619,12 @@ const InspoPage = () => {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       Highlights
                     </p>
-                    <div className="flex flex-wrap gap-1">
-                      {trip.highlights.slice(0, 3).map((highlight, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                    <div className="flex flex-wrap gap-1.5 overflow-hidden" style={{ maxHeight: '3.5rem' }}>
+                      {trip.highlights.map((highlight, index) => (
+                        <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
                           {highlight}
                         </Badge>
                       ))}
-                      {trip.highlights.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{trip.highlights.length - 3} more
-                        </Badge>
-                      )}
                     </div>
                   </div>
 
