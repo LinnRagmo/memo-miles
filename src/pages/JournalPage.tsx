@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Image as ImageIcon, Calendar as CalendarIcon, ArrowLeft, Sparkles } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon, Calendar as CalendarIcon, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import PhotoAlbumView from "@/components/PhotoAlbumView";
@@ -54,7 +54,6 @@ const JournalPage = () => {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [tripInfo, setTripInfo] = useState<{ title: string; start_date: string; end_date: string } | null>(null);
   const [fullTripData, setFullTripData] = useState<Trip | null>(null);
-  const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const [newEntry, setNewEntry] = useState({
     title: "",
     date: new Date(),
@@ -255,56 +254,56 @@ const JournalPage = () => {
     });
   };
 
-  const handleGetAISuggestions = async () => {
-    if (!fullTripData) {
-      toast({
-        title: "Trip data not available",
-        description: "Unable to generate suggestions at this time.",
-        variant: "destructive",
-      });
-      return;
+  const generateTemplateFromPlanView = (selectedDate: Date) => {
+    if (!fullTripData) return { title: "", notes: "" };
+
+    const dayData = fullTripData.days?.find((day: any) => {
+      const dayDate = new Date(day.date).toDateString();
+      const selected = selectedDate.toDateString();
+      return dayDate === selected;
+    });
+
+    if (!dayData || !dayData.stops || dayData.stops.length === 0) {
+      return {
+        title: `Day ${format(selectedDate, "MMM d, yyyy")}`,
+        notes: "Add your thoughts and memories from today...\n\n📸 Don't forget to add photos below!"
+      };
     }
 
-    setIsGeneratingSuggestions(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('suggest-journal-entry', {
-        body: {
-          selectedDate: newEntry.date.toISOString(),
-          tripData: fullTripData
-        }
-      });
-
-      if (error) {
-        console.error("Error getting AI suggestions:", error);
-        toast({
-          title: "Failed to generate suggestions",
-          description: error.message || "Please try again later.",
-          variant: "destructive",
-        });
-        return;
+    const title = `Exploring ${dayData.stops[0]?.location || "New Places"}`;
+    
+    let notes = `Today's Adventure:\n\n`;
+    dayData.stops.forEach((stop: any, index: number) => {
+      notes += `${index + 1}. ${stop.location}`;
+      if (stop.notes) {
+        notes += ` - ${stop.notes}`;
       }
+      notes += `\n`;
+    });
+    
+    notes += `\n💭 Reflections:\n(Add your thoughts and feelings about today's experiences)\n\n📸 Photos:\n(Add photos in the section below)`;
 
-      if (data) {
-        setNewEntry(prev => ({
-          ...prev,
-          title: data.title || prev.title,
-          notes: data.notes || prev.notes,
-        }));
-        toast({
-          title: "Suggestions generated",
-          description: "AI has suggested a title and notes based on your planned activities.",
-        });
-      }
-    } catch (error) {
-      console.error("Error calling AI function:", error);
-      toast({
-        title: "Error",
-        description: "Failed to get AI suggestions.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingSuggestions(false);
-    }
+    return { title, notes };
+  };
+
+  const handleOpenCreateForm = () => {
+    const template = generateTemplateFromPlanView(newEntry.date);
+    setNewEntry(prev => ({
+      ...prev,
+      title: template.title,
+      notes: template.notes,
+    }));
+    setIsCreating(true);
+  };
+
+  const handleDateChange = (date: Date) => {
+    const template = generateTemplateFromPlanView(date);
+    setNewEntry({
+      ...newEntry,
+      date,
+      title: template.title,
+      notes: template.notes,
+    });
   };
 
   if (authLoading) {
@@ -355,7 +354,7 @@ const JournalPage = () => {
                 </p>
               )}
             </div>
-            <Button onClick={() => setIsCreating(!isCreating)} size="lg" className="gap-2 shadow-lg">
+            <Button onClick={handleOpenCreateForm} size="lg" className="gap-2 shadow-lg">
               <Plus className="w-4 h-4" />
               New Entry
             </Button>
@@ -370,20 +369,7 @@ const JournalPage = () => {
             </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="title">Title</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleGetAISuggestions}
-                  disabled={isGeneratingSuggestions}
-                  className="gap-2 text-xs"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  {isGeneratingSuggestions ? "Generating..." : "AI Suggest"}
-                </Button>
-              </div>
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
                 placeholder="Give your entry a title..."
@@ -412,7 +398,7 @@ const JournalPage = () => {
                   <Calendar
                     mode="single"
                     selected={newEntry.date}
-                    onSelect={(date) => date && setNewEntry({ ...newEntry, date })}
+                    onSelect={(date) => date && handleDateChange(date)}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                     disabled={(date) => {
