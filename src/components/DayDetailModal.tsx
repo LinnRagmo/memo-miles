@@ -6,17 +6,21 @@ import { Button } from "@/components/ui/button";
 import TimelineView from "./TimelineView";
 import MapView from "./MapView";
 import AddEventForm from "./AddEventForm";
+import EditEventForm from "./EditEventForm";
 
 interface DayDetailModalProps {
   day: TripDay | null;
   isOpen: boolean;
   onClose: () => void;
   onAddEvent: (dayId: string, event: Omit<Stop, "id">) => void;
+  onUpdateEvent: (dayId: string, stopId: string, updatedStop: Omit<Stop, "id">) => void;
+  onDeleteEvent: (dayId: string, stopId: string) => void;
 }
 
-const DayDetailModal = ({ day, isOpen, onClose, onAddEvent }: DayDetailModalProps) => {
+const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDeleteEvent }: DayDetailModalProps) => {
   const [highlightedStopId, setHighlightedStopId] = useState<string | undefined>();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingStopId, setEditingStopId] = useState<string | null>(null);
 
   if (!day) return null;
 
@@ -24,6 +28,19 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent }: DayDetailModalProp
     onAddEvent(day.id, event);
     setShowAddForm(false);
   };
+
+  const handleEditEvent = (stopId: string, updatedStop: Omit<Stop, "id">) => {
+    onUpdateEvent(day.id, stopId, updatedStop);
+    setEditingStopId(null);
+  };
+
+  const handleDeleteEvent = (stopId: string) => {
+    if (window.confirm("Are you sure you want to delete this event?")) {
+      onDeleteEvent(day.id, stopId);
+    }
+  };
+
+  const editingStop = editingStopId ? day.stops.find(s => s.id === editingStopId) : null;
 
   const handleStopClick = (stopId: string) => {
     setHighlightedStopId(stopId);
@@ -71,7 +88,13 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent }: DayDetailModalProp
           {/* Left Panel - Timeline */}
           <div className="w-1/2 border-r border-border overflow-y-auto bg-background">
             <div className="p-4">
-              {!showAddForm ? (
+              {editingStop ? (
+                <EditEventForm
+                  stop={editingStop}
+                  onSave={handleEditEvent}
+                  onCancel={() => setEditingStopId(null)}
+                />
+              ) : !showAddForm ? (
                 <Button
                   onClick={() => setShowAddForm(true)}
                   variant="outline"
@@ -91,6 +114,11 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent }: DayDetailModalProp
               day={day} 
               onStopClick={handleStopClick}
               highlightedStopId={highlightedStopId}
+              onEditStop={(stopId) => {
+                setShowAddForm(false);
+                setEditingStopId(stopId);
+              }}
+              onDeleteStop={handleDeleteEvent}
             />
           </div>
           

@@ -188,6 +188,64 @@ const Index = () => {
     toast.success("Event added successfully!");
   };
 
+  const handleUpdateEvent = (dayId: string, stopId: string, updatedStop: Omit<Stop, "id">) => {
+    if (!trip) return;
+
+    const updatedTrip = {
+      ...trip,
+      days: trip.days.map(day =>
+        day.id === dayId
+          ? { 
+              ...day, 
+              stops: day.stops.map(stop => 
+                stop.id === stopId ? { ...updatedStop, id: stopId } : stop
+              )
+            }
+          : day
+      )
+    };
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
+
+    // Update selectedDay to reflect the changes
+    setSelectedDay(prev => 
+      prev && prev.id === dayId
+        ? { 
+            ...prev, 
+            stops: prev.stops.map(stop => 
+              stop.id === stopId ? { ...updatedStop, id: stopId } : stop
+            )
+          }
+        : prev
+    );
+
+    toast.success("Event updated successfully!");
+  };
+
+  const handleDeleteEvent = (dayId: string, stopId: string) => {
+    if (!trip) return;
+
+    const updatedTrip = {
+      ...trip,
+      days: trip.days.map(day =>
+        day.id === dayId
+          ? { ...day, stops: day.stops.filter(stop => stop.id !== stopId) }
+          : day
+      )
+    };
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
+
+    // Update selectedDay to reflect the deletion
+    setSelectedDay(prev => 
+      prev && prev.id === dayId
+        ? { ...prev, stops: prev.stops.filter(stop => stop.id !== stopId) }
+        : prev
+    );
+
+    toast.success("Event deleted successfully!");
+  };
+
   const handleAddFavoriteToDay = (place: { location: string; description: string; coordinates?: [number, number] }) => {
     if (!selectedDay) {
       toast.error("Please select a day first");
@@ -250,6 +308,8 @@ const Index = () => {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onAddEvent={handleAddEvent}
+            onUpdateEvent={handleUpdateEvent}
+            onDeleteEvent={handleDeleteEvent}
           />
 
           <TotalRouteModal

@@ -1,10 +1,13 @@
 import { TripDay, Stop } from "@/types/trip";
-import { Car, MapPin, Coffee, Camera } from "lucide-react";
+import { Car, MapPin, Coffee, Camera, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TimelineViewProps {
   day: TripDay;
   onStopClick?: (stopId: string) => void;
   highlightedStopId?: string;
+  onEditStop?: (stopId: string) => void;
+  onDeleteStop?: (stopId: string) => void;
 }
 
 const getStopIcon = (type: Stop['type']) => {
@@ -20,7 +23,7 @@ const getStopIcon = (type: Stop['type']) => {
   }
 };
 
-const TimelineView = ({ day, onStopClick, highlightedStopId }: TimelineViewProps) => {
+const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, onDeleteStop }: TimelineViewProps) => {
   return (
     <div className="p-6">
       <div className="space-y-6">
@@ -78,11 +81,39 @@ const TimelineView = ({ day, onStopClick, highlightedStopId }: TimelineViewProps
                         <p className="text-sm text-muted-foreground">{stop.notes}</p>
                       )}
                     </div>
-                    {stop.coordinates && (
-                      <MapPin className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                        isHighlighted ? 'text-primary' : 'text-muted-foreground'
-                      }`} />
-                    )}
+                    <div className="flex items-center gap-1">
+                      {stop.coordinates && (
+                        <MapPin className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                          isHighlighted ? 'text-primary' : 'text-muted-foreground'
+                        }`} />
+                      )}
+                      {onEditStop && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditStop(stop.id);
+                          }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {onDeleteStop && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteStop(stop.id);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
