@@ -298,6 +298,33 @@ const Index = () => {
     handleAddEvent(selectedDay.id, newStop);
   };
 
+  const handleMoveActivity = (fromDayId: string, toDayId: string, stopId: string) => {
+    if (!trip) return;
+
+    // Find the stop to move
+    const fromDay = trip.days.find(d => d.id === fromDayId);
+    const stopToMove = fromDay?.stops.find(s => s.id === stopId);
+    
+    if (!stopToMove) return;
+
+    // Remove from old day and add to new day
+    const updatedTrip = {
+      ...trip,
+      days: trip.days.map(day => {
+        if (day.id === fromDayId) {
+          return { ...day, stops: day.stops.filter(s => s.id !== stopId) };
+        }
+        if (day.id === toDayId) {
+          return { ...day, stops: [...day.stops, stopToMove] };
+        }
+        return day;
+      })
+    };
+
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -336,6 +363,7 @@ const Index = () => {
             days={trip.days}
             onDayClick={handleDayClick}
             onUpdateDay={handleUpdateDay}
+            onMoveActivity={handleMoveActivity}
           />
 
           <DayDetailModal
