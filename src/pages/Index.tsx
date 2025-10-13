@@ -244,8 +244,8 @@ const Index = () => {
     saveTrip(updatedTrip);
   };
 
-  const handleAddDay = (insertIndex: number) => {
-    if (!trip) return;
+  const handleAddDay = async (insertIndex: number) => {
+    if (!trip || !tripId) return;
 
     const newDays = [...trip.days];
     
@@ -280,25 +280,76 @@ const Index = () => {
 
     newDays.splice(insertIndex, 0, newDay);
 
+    // Calculate new start and end dates from the updated days array
+    const newStartDate = new Date(newDays[0].date);
+    const newEndDate = new Date(newDays[newDays.length - 1].date);
+
     const updatedTrip = {
       ...trip,
+      startDate: format(newStartDate, "MMM d, yyyy"),
+      endDate: format(newEndDate, "MMM d, yyyy"),
       days: newDays
     };
+    
     setTrip(updatedTrip);
-    saveTrip(updatedTrip);
-    toast.success("Day added");
+
+    // Save to database with updated dates
+    try {
+      const { error } = await supabase
+        .from("trips")
+        .update({
+          start_date: format(newStartDate, "yyyy-MM-dd"),
+          end_date: format(newEndDate, "yyyy-MM-dd"),
+          trip_data: { days: newDays } as any,
+        })
+        .eq("id", tripId);
+
+      if (error) throw error;
+      toast.success("Day added");
+    } catch (error: any) {
+      toast.error("Failed to add day");
+    }
   };
 
-  const handleRemoveDay = (dayId: string) => {
-    if (!trip) return;
+  const handleRemoveDay = async (dayId: string) => {
+    if (!trip || !tripId) return;
+
+    const updatedDays = trip.days.filter(day => day.id !== dayId);
+    
+    if (updatedDays.length === 0) {
+      toast.error("Cannot remove the last day");
+      return;
+    }
+
+    // Calculate new start and end dates from the updated days array
+    const newStartDate = new Date(updatedDays[0].date);
+    const newEndDate = new Date(updatedDays[updatedDays.length - 1].date);
 
     const updatedTrip = {
       ...trip,
-      days: trip.days.filter(day => day.id !== dayId)
+      startDate: format(newStartDate, "MMM d, yyyy"),
+      endDate: format(newEndDate, "MMM d, yyyy"),
+      days: updatedDays
     };
+    
     setTrip(updatedTrip);
-    saveTrip(updatedTrip);
-    toast.success("Day removed");
+
+    // Save to database with updated dates
+    try {
+      const { error } = await supabase
+        .from("trips")
+        .update({
+          start_date: format(newStartDate, "yyyy-MM-dd"),
+          end_date: format(newEndDate, "yyyy-MM-dd"),
+          trip_data: { days: updatedDays } as any,
+        })
+        .eq("id", tripId);
+
+      if (error) throw error;
+      toast.success("Day removed");
+    } catch (error: any) {
+      toast.error("Failed to remove day");
+    }
   };
 
 
