@@ -69,7 +69,7 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
       >
         {/* Timeline line */}
         {!isLast && (
-          <div className="absolute left-5 top-12 w-0.5 h-[calc(100%+2rem)] -ml-px bg-border" />
+          <div className="absolute left-5 top-12 w-0.5 h-[calc(100%+3rem)] -ml-px bg-border" />
         )}
         
         {/* Drag Handle & Icon */}
@@ -150,25 +150,30 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 )}
-                {!isLast && onAddAfter && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 border border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-all ml-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddAfter(index);
-                    }}
-                    title="Add event after this"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                )}
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Add button on timeline between stops */}
+      {!isLast && onAddAfter && (
+        <div className="relative flex justify-start h-12 ml-5">
+          <div className="absolute left-0 top-0 w-0.5 h-full -ml-px bg-border" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative z-10 -ml-4 h-8 w-8 rounded-full bg-background border-2 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary hover:scale-110 transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddAfter(index);
+            }}
+            title="Add event after this"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
