@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Session } from "@supabase/supabase-js";
 import { z } from "zod";
+import australiaRoadTripImg from "@/assets/australia-road-trip.jpg";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -130,50 +131,65 @@ const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-5xl font-bold text-foreground mb-2">MEMOmiles</h1>
-          <p className="text-muted-foreground">
-            {isLogin ? "Welcome back" : "Create your account"}
-          </p>
-        </div>
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url(${australiaRoadTripImg})`,
+          filter: "brightness(0.85) saturate(1.1)",
+        }}
+      />
+      
+      {/* Subtle Brightness Overlay */}
+      <div className="absolute inset-0 bg-white/10" />
 
-        <form onSubmit={handleAuth} className="space-y-6">
-          <div className="space-y-4">
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="h-12"
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="h-12"
-            />
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-md space-y-8 px-4">
+        <div className="bg-white/20 dark:bg-white/20 backdrop-blur-md border border-white/40 rounded-lg p-8 shadow-lg">
+          <div className="text-center mb-8">
+            <h1 className="text-5xl font-bold text-white mb-2 drop-shadow-lg">MEMOmiles</h1>
+            <p className="text-white/90 drop-shadow-md">
+              {isLogin ? "Welcome back" : "Create your account"}
+            </p>
           </div>
 
-          <Button
-            type="submit"
-            className="w-full h-12 text-lg font-bold"
-            disabled={loading}
-          >
-            {loading ? "Loading..." : isLogin ? "Log In" : "Sign Up"}
-          </Button>
-        </form>
+          <form onSubmit={handleAuth} className="space-y-6">
+            <div className="space-y-4">
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-12 bg-white/30 border-white/40 text-white placeholder:text-white/70"
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-12 bg-white/30 border-white/40 text-white placeholder:text-white/70"
+              />
+            </div>
 
-        <button
-          onClick={() => setIsLogin(!isLogin)}
-          className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log in"}
-        </button>
+            <Button
+              type="submit"
+              className="w-full h-12 text-lg font-bold bg-white/30 hover:bg-white/40 text-white border border-white/40"
+              disabled={loading}
+            >
+              {loading ? "Loading..." : isLogin ? "Log In" : "Sign Up"}
+            </Button>
+          </form>
+
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            className="w-full text-center text-sm text-white/90 hover:text-white transition-colors mt-6"
+          >
+            {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log in"}
+          </button>
+        </div>
       </div>
     </div>
   );
