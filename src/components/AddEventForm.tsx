@@ -21,7 +21,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!time || !location) return;
+    if (!location) return;
 
     onAddEvent({
       time,
@@ -53,16 +53,16 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <Label htmlFor="time" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
-            Time
-          </Label>
+        <Label htmlFor="time" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+          Time (Optional)
+        </Label>
           <Input
             id="time"
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            required
             className="h-9"
+            placeholder="Optional"
           />
         </div>
 

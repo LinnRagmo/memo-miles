@@ -22,7 +22,7 @@ const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!time || !location) return;
+    if (!location) return;
 
     onSave(stop.id, {
       time,
@@ -49,14 +49,13 @@ const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <Label htmlFor="edit-time" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
-            Time
+            Time (Optional)
           </Label>
           <Input
             id="edit-time"
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            required
             className="h-9"
           />
         </div>
