@@ -1,17 +1,18 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Clock, User, Calendar, Heart, Search, Plus, Trash2, X, Image as ImageIcon, Filter } from "lucide-react";
+import { Clock, Search, Plus, Trash2, X, Image as ImageIcon, Filter } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import TripDetailModal from "@/components/TripDetailModal";
 import heroImagePCH from "@/assets/inspo-hero-pch.jpg";
 import heroImageSmokies from "@/assets/inspo-hero-smokies.jpg";
 import heroImageSouthwest from "@/assets/inspo-hero-southwest.jpg";
@@ -100,6 +101,8 @@ const InspoPage = () => {
   const [durationFilter, setDurationFilter] = useState("all");
   const [distanceFilter, setDistanceFilter] = useState("all");
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState<RoadTripPost | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [userPosts, setUserPosts] = useState<RoadTripPost[]>([]);
   const [newPost, setNewPost] = useState({
     title: "",
@@ -244,6 +247,11 @@ const InspoPage = () => {
   const deletePost = (id: string) => {
     setUserPosts(userPosts.filter(p => p.id !== id));
     toast.success("Post deleted");
+  };
+
+  const handleTripClick = (trip: RoadTripPost) => {
+    setSelectedTrip(trip);
+    setIsDetailOpen(true);
   };
 
   // Combine user posts and sample trips
@@ -539,6 +547,17 @@ const InspoPage = () => {
           </div>
         </div>
 
+        {/* Trip Detail Modal */}
+        <TripDetailModal
+          trip={selectedTrip}
+          isOpen={isDetailOpen}
+          onClose={() => setIsDetailOpen(false)}
+          onSaveFavorite={handleSaveFavorite}
+          onDeletePost={deletePost}
+          isFavorite={isFavorite}
+          isUserPost={userPosts.some(p => p.id === selectedTrip?.id)}
+        />
+
         {filteredTrips.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground text-lg mb-2">No trips found matching "{searchQuery}"</p>
@@ -547,124 +566,81 @@ const InspoPage = () => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTrips.map((trip) => (
-            <article key={trip.id} className="group">
-              <Card className="border-2 border-border hover:border-primary/50 transition-all duration-300 overflow-hidden">
-                {/* Hero Image */}
-                <div className="relative h-64 sm:h-96 overflow-hidden">
+              <Card 
+                key={trip.id} 
+                className="group cursor-pointer border-2 border-border hover:border-primary/50 transition-all duration-300 overflow-hidden hover:shadow-lg"
+                onClick={() => handleTripClick(trip)}
+              >
+                {/* Compact Image */}
+                <div className="relative h-48 overflow-hidden">
                   <img
                     src={trip.heroImage}
                     alt={trip.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <Badge variant="secondary" className="gap-1 bg-background/90 backdrop-blur">
-                        <Clock className="w-3 h-3" />
-                        {trip.duration}
-                      </Badge>
-                      <Badge variant="secondary" className="bg-background/90 backdrop-blur">
-                        {trip.distance}
-                      </Badge>
-                    </div>
-                    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 drop-shadow-lg">
-                      {trip.title}
-                    </h2>
-                    {/* Delete button for user posts */}
-                    {userPosts.some(p => p.id === trip.id) && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="absolute top-4 right-4"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deletePost(trip.id);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  {/* Delete button for user posts */}
+                  {userPosts.some(p => p.id === trip.id) && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute top-2 right-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deletePost(trip.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
 
-                <CardHeader className="space-y-4">
-                  {/* Meta Info */}
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      <span>{trip.author}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>{trip.date}</span>
-                    </div>
-                    <div className="text-muted-foreground/80">{trip.readTime}</div>
+                <CardContent className="p-4 space-y-3">
+                  {/* Title */}
+                  <h3 className="font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                    {trip.title}
+                  </h3>
+
+                  {/* Duration and Distance */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="secondary" className="gap-1">
+                      <Clock className="w-3 h-3" />
+                      {trip.duration}
+                    </Badge>
+                    <Badge variant="outline">
+                      {trip.distance}
+                    </Badge>
                   </div>
 
-                  <CardDescription className="text-base sm:text-lg leading-relaxed">
-                    {trip.description}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-8">
                   {/* Highlights */}
-                  <div>
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                      <div className="w-1 h-6 bg-primary rounded-full" />
-                      Trip Highlights
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {trip.highlights.map((highlight, index) => (
-                        <Badge key={index} variant="outline" className="text-sm px-3 py-1">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Highlights
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {trip.highlights.slice(0, 3).map((highlight, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
                           {highlight}
                         </Badge>
                       ))}
+                      {trip.highlights.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{trip.highlights.length - 3} more
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
-                  {/* Stops */}
-                  <div>
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                      <div className="w-1 h-6 bg-primary rounded-full" />
-                      Route & Stops
-                    </h3>
-                    <div className="space-y-4">
-                      {trip.stops.map((stop, index) => (
-                        <div key={index} className="flex gap-4 items-start group/stop">
-                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg group-hover/stop:scale-110 transition-transform">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1 pt-1">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <h4 className="font-bold text-foreground text-lg mb-1 flex items-center gap-2">
-                                  <MapPin className="w-4 h-4 text-primary" />
-                                  {stop.location}
-                                </h4>
-                                <p className="text-muted-foreground leading-relaxed">{stop.description}</p>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="gap-2 hover:bg-primary/10 hover:text-primary"
-                                onClick={() => handleSaveFavorite(stop, trip.title)}
-                              >
-                                <Heart className={`w-4 h-4 ${isFavorite(`${trip.title}-${stop.location}`.replace(/\s+/g, '-').toLowerCase()) ? 'fill-primary text-primary' : ''}`} />
-                                Save
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Read More Hint */}
+                  <p className="text-xs text-muted-foreground pt-2 group-hover:text-primary transition-colors">
+                    Click to view details →
+                  </p>
                 </CardContent>
               </Card>
-            </article>
-          ))}
-        </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
