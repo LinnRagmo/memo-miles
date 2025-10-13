@@ -1,6 +1,17 @@
 import { TripDay, Stop } from "@/types/trip";
-import { Clock, MapPin, StickyNote, Car, Hotel, Camera, Sunrise, Sunset, GripVertical } from "lucide-react";
+import { Clock, MapPin, StickyNote, Car, Hotel, Camera, Sunrise, Sunset, GripVertical, Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DndContext,
   DragOverlay,
@@ -22,6 +33,8 @@ interface TripTableProps {
   onDayClick: (day: TripDay) => void;
   onUpdateDay: (dayId: string, field: keyof TripDay, value: string) => void;
   onMoveActivity: (fromDayId: string, toDayId: string, stopId: string, targetIndex?: number) => void;
+  onAddDay: (insertIndex: number) => void;
+  onRemoveDay: (dayId: string) => void;
 }
 
 const getEventIcon = (type: string) => {
@@ -108,30 +121,43 @@ interface DroppableDayProps {
   day: TripDay;
   dayIndex: number;
   onDayClick: (day: TripDay) => void;
+  onRemoveDay: (dayId: string) => void;
 }
 
-const DroppableDay = ({ day, dayIndex, onDayClick }: DroppableDayProps) => {
+const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay }: DroppableDayProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: day.id,
     data: { day },
   });
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   return (
-    <div
-      ref={setNodeRef}
-      className={`flex-shrink-0 w-[320px] bg-card rounded-lg border-2 overflow-hidden transition-colors ${
-        isOver ? 'border-primary bg-primary/5' : 'border-border'
-      }`}
-    >
-      {/* Day Header */}
+    <>
       <div
-        onClick={() => onDayClick(day)}
-        className="bg-foreground text-background cursor-pointer hover:bg-foreground/90 transition-colors px-4 py-4 border-b-2 border-border"
+        ref={setNodeRef}
+        className={`flex-shrink-0 w-[320px] bg-card rounded-lg border-2 overflow-hidden transition-colors ${
+          isOver ? 'border-primary bg-primary/5' : 'border-border'
+        }`}
       >
-        <div className="flex flex-col gap-2">
-          <span className="text-lg font-bold">
-            {day.date}
-          </span>
+        {/* Day Header */}
+        <div className="bg-foreground text-background px-4 py-4 border-b-2 border-border relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteDialog(true);
+            }}
+            className="absolute top-2 right-2 hover:bg-background/20 rounded-full p-1 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div
+            onClick={() => onDayClick(day)}
+            className="cursor-pointer"
+          >
+            <div className="flex flex-col gap-2">
+              <span className="text-lg font-bold">
+                {day.date}
+              </span>
           <span className="text-sm opacity-80">
             Day {dayIndex + 1} • {day.stops.length} events
           </span>
@@ -152,25 +178,45 @@ const DroppableDay = ({ day, dayIndex, onDayClick }: DroppableDayProps) => {
               )}
             </div>
           )}
+            </div>
+          </div>
+        </div>
+
+        {/* Events List */}
+        <div className="p-4 space-y-3 min-h-[200px]">
+          {day.stops.map((stop) => (
+            <DraggableStop key={stop.id} stop={stop} dayId={day.id} day={day} />
+          ))}
+          {day.stops.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              Drop activities here
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Events List */}
-      <div className="p-4 space-y-3 min-h-[200px]">
-        {day.stops.map((stop) => (
-          <DraggableStop key={stop.id} stop={stop} dayId={day.id} day={day} />
-        ))}
-        {day.stops.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            Drop activities here
-          </div>
-        )}
-      </div>
-    </div>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Day {dayIndex + 1}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove Day {dayIndex + 1} ({day.date})? 
+              {day.stops.length > 0 && ` This will delete ${day.stops.length} event${day.stops.length > 1 ? 's' : ''}.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => onRemoveDay(day.id)}>
+              Remove Day
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
-const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity }: TripTableProps) => {
+const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, onRemoveDay }: TripTableProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeStop, setActiveStop] = useState<Stop | null>(null);
 
@@ -277,14 +323,35 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity }: TripTableP
     >
       <div className="container mx-auto px-6 py-6">
         <div className="overflow-x-auto">
-          <div className="inline-flex gap-4 min-w-full pb-4">
+          <div className="inline-flex items-start gap-2 min-w-full pb-4">
+            {/* Add button before first day */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="flex-shrink-0 w-8 h-8 mt-20"
+              onClick={() => onAddDay(0)}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+
             {days.map((day, dayIndex) => (
-              <DroppableDay
-                key={day.id}
-                day={day}
-                dayIndex={dayIndex}
-                onDayClick={onDayClick}
-              />
+              <div key={day.id} className="inline-flex items-start gap-2">
+                <DroppableDay
+                  day={day}
+                  dayIndex={dayIndex}
+                  onDayClick={onDayClick}
+                  onRemoveDay={onRemoveDay}
+                />
+                {/* Add button after each day */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="flex-shrink-0 w-8 h-8 mt-20"
+                  onClick={() => onAddDay(dayIndex + 1)}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             ))}
           </div>
         </div>

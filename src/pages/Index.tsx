@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { fetchSunriseSunset, parseDate } from "@/lib/sunriseSunset";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, eachDayOfInterval, parseISO } from "date-fns";
+import { format, eachDayOfInterval, parseISO, differenceInDays, addDays } from "date-fns";
 
 // Sample data removed - trips are now loaded from database
 
@@ -149,6 +149,88 @@ const Index = () => {
     setIsModalOpen(true);
   };
 
+  const handleDateChange = async (newStartDate: Date, newEndDate: Date) => {
+    if (!trip || !tripId) return;
+
+    if (newEndDate < newStartDate) {
+      toast.error("End date cannot be before start date");
+      return;
+    }
+
+    const oldStartDate = parseISO(format(new Date(trip.startDate), "yyyy-MM-dd"));
+    const oldEndDate = parseISO(format(new Date(trip.endDate), "yyyy-MM-dd"));
+    const oldDuration = differenceInDays(oldEndDate, oldStartDate) + 1;
+    const newDuration = differenceInDays(newEndDate, newStartDate) + 1;
+
+    let updatedDays = [...trip.days];
+
+    if (oldDuration === newDuration) {
+      // Duration stays same - shift dates
+      const newDateRange = eachDayOfInterval({ start: newStartDate, end: newEndDate });
+      updatedDays = trip.days.map((day, index) => ({
+        ...day,
+        date: format(newDateRange[index], "MMM d, yyyy")
+      }));
+    } else if (newDuration > oldDuration) {
+      // Extended - add empty days at end
+      const additionalDays = newDuration - oldDuration;
+      const newDateRange = eachDayOfInterval({ start: newStartDate, end: newEndDate });
+      
+      updatedDays = trip.days.map((day, index) => ({
+        ...day,
+        date: format(newDateRange[index], "MMM d, yyyy")
+      }));
+      
+      for (let i = 0; i < additionalDays; i++) {
+        const dayIndex = oldDuration + i;
+        updatedDays.push({
+          id: `day-${Date.now()}-${i}`,
+          date: format(newDateRange[dayIndex], "MMM d, yyyy"),
+          drivingTime: "",
+          activities: "",
+          notes: "",
+          stops: []
+        });
+      }
+    } else {
+      // Shortened - remove days from end
+      const daysToRemove = oldDuration - newDuration;
+      updatedDays = trip.days.slice(0, newDuration);
+      
+      const newDateRange = eachDayOfInterval({ start: newStartDate, end: newEndDate });
+      updatedDays = updatedDays.map((day, index) => ({
+        ...day,
+        date: format(newDateRange[index], "MMM d, yyyy")
+      }));
+    }
+
+    const updatedTrip = {
+      ...trip,
+      startDate: format(newStartDate, "MMM d, yyyy"),
+      endDate: format(newEndDate, "MMM d, yyyy"),
+      days: updatedDays
+    };
+
+    setTrip(updatedTrip);
+
+    // Save to database
+    try {
+      const { error } = await supabase
+        .from("trips")
+        .update({
+          start_date: format(newStartDate, "yyyy-MM-dd"),
+          end_date: format(newEndDate, "yyyy-MM-dd"),
+          trip_data: { days: updatedDays } as any,
+        })
+        .eq("id", tripId);
+
+      if (error) throw error;
+      toast.success("Trip dates updated");
+    } catch (error: any) {
+      toast.error("Failed to update dates");
+    }
+  };
+
   const handleUpdateDay = (dayId: string, field: keyof TripDay, value: string) => {
     if (!trip) return;
     
@@ -160,6 +242,63 @@ const Index = () => {
     };
     setTrip(updatedTrip);
     saveTrip(updatedTrip);
+  };
+
+  const handleAddDay = (insertIndex: number) => {
+    if (!trip) return;
+
+    const newDays = [...trip.days];
+    
+    // Calculate the date for the new day
+    let newDate: Date;
+    if (insertIndex === 0) {
+      // Adding before first day
+      newDate = addDays(new Date(trip.days[0].date), -1);
+    } else if (insertIndex >= newDays.length) {
+      // Adding after last day
+      newDate = addDays(new Date(trip.days[trip.days.length - 1].date), 1);
+    } else {
+      // Adding between days - use the date at insertIndex
+      newDate = new Date(trip.days[insertIndex].date);
+      // Shift all subsequent days forward by 1
+      for (let i = insertIndex; i < newDays.length; i++) {
+        newDays[i] = {
+          ...newDays[i],
+          date: format(addDays(new Date(newDays[i].date), 1), "MMM d, yyyy")
+        };
+      }
+    }
+
+    const newDay: TripDay = {
+      id: `day-${Date.now()}`,
+      date: format(newDate, "MMM d, yyyy"),
+      drivingTime: "",
+      activities: "",
+      notes: "",
+      stops: []
+    };
+
+    newDays.splice(insertIndex, 0, newDay);
+
+    const updatedTrip = {
+      ...trip,
+      days: newDays
+    };
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
+    toast.success("Day added");
+  };
+
+  const handleRemoveDay = (dayId: string) => {
+    if (!trip) return;
+
+    const updatedTrip = {
+      ...trip,
+      days: trip.days.filter(day => day.id !== dayId)
+    };
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
+    toast.success("Day removed");
   };
 
 
@@ -366,6 +505,7 @@ const Index = () => {
             startDate={trip.startDate}
             endDate={trip.endDate}
             onShowTotalRoute={() => setIsTotalRouteOpen(true)}
+            onDateChange={handleDateChange}
           />
           
           <TripTable
@@ -373,6 +513,8 @@ const Index = () => {
             onDayClick={handleDayClick}
             onUpdateDay={handleUpdateDay}
             onMoveActivity={handleMoveActivity}
+            onAddDay={handleAddDay}
+            onRemoveDay={handleRemoveDay}
           />
 
           <DayDetailModal
