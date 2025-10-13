@@ -102,7 +102,10 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
               stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
               'bg-card border-2 border-border text-muted-foreground'
             } ${isHighlighted ? 'ring-4 ring-primary/30 scale-110' : 'group-hover:scale-105'}`}>
-              <span className="text-sm font-semibold">{index + 1}</span>
+              <Icon className="w-5 h-5" />
+            </div>
+            <div className="absolute -top-1 -right-1 bg-background border-2 border-primary rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
+              <span className="text-xs font-bold text-primary">{index + 1}</span>
             </div>
           </div>
         </div>
