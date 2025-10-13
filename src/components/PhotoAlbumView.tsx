@@ -40,33 +40,27 @@ const PhotoAlbumView = ({ isOpen, onClose, title, date, photos }: PhotoAlbumView
 
         {/* Scrollable Photo Album */}
         <div className="overflow-y-auto px-6 py-8">
-          <div className="space-y-16 max-w-4xl mx-auto">
+          <div className="space-y-8 max-w-4xl mx-auto">
             {photos.map((photo, index) => {
               const isLeft = index % 2 === 0;
               return (
                 <div
                   key={index}
-                  className={`flex flex-col ${
-                    isLeft ? "items-start" : "items-end"
-                  } gap-4 animate-fade-in`}
+                  className={`flex flex-col md:flex-row ${
+                    isLeft ? "md:flex-row" : "md:flex-row-reverse"
+                  } gap-6 animate-fade-in items-start`}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div
-                    className={`w-full md:w-[85%] ${
-                      isLeft ? "md:mr-auto" : "md:ml-auto"
-                    }`}
-                  >
+                  <div className="w-full md:w-2/5 flex-shrink-0">
                     <img
                       src={photo.src}
                       alt={photo.caption}
-                      className="w-full h-auto rounded-lg shadow-lg object-cover"
-                      style={{ maxHeight: "500px" }}
+                      className="w-full h-auto rounded-lg shadow-medium object-cover"
+                      style={{ maxHeight: "300px" }}
                     />
-                    <p
-                      className={`mt-3 text-foreground/80 italic text-lg ${
-                        isLeft ? "text-left" : "text-right"
-                      }`}
-                    >
+                  </div>
+                  <div className={`flex-1 flex items-center ${isLeft ? "md:pl-2" : "md:pr-2"}`}>
+                    <p className="text-foreground/80 italic text-base leading-relaxed">
                       {photo.caption}
                     </p>
                   </div>

@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Image as ImageIcon, Calendar } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon, Calendar, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import PhotoAlbumView from "@/components/PhotoAlbumView";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 import samplePhoto1 from "@/assets/journal-sample-1.jpg";
 import samplePhoto2 from "@/assets/journal-sample-2.jpg";
 import samplePhoto3 from "@/assets/journal-sample-3.jpg";
@@ -84,6 +86,7 @@ const JournalPage = () => {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [tripInfo, setTripInfo] = useState<{ title: string; start_date: string; end_date: string } | null>(null);
   const [newEntry, setNewEntry] = useState({
     title: "",
     notes: "",
@@ -98,10 +101,26 @@ const JournalPage = () => {
     }
   }, [user, authLoading, navigate, tripId]);
 
-  // Load entries from localStorage on mount, or use template if empty
+  // Fetch trip info and load entries
   useEffect(() => {
     if (!tripId) return;
     
+    // Fetch trip info
+    const fetchTripInfo = async () => {
+      const { data, error } = await supabase
+        .from("trips")
+        .select("title, start_date, end_date")
+        .eq("id", tripId)
+        .single();
+
+      if (!error && data) {
+        setTripInfo(data);
+      }
+    };
+
+    fetchTripInfo();
+    
+    // Load entries from localStorage
     const stored = localStorage.getItem(`journal-entries-${tripId}`);
     if (stored) {
       try {
@@ -296,17 +315,31 @@ const JournalPage = () => {
           }
         />
 
-        <div className="mb-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-2">Travel Journal</h1>
-            <p className="text-muted-foreground text-lg sm:text-xl">
-              Document your adventures and preserve your memories
-            </p>
+        <div className="mb-12">
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="hover:bg-accent"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1">
+              <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-2">
+                {tripInfo?.title || "Travel Journal"}
+              </h1>
+              {tripInfo && (
+                <p className="text-muted-foreground text-lg">
+                  {format(new Date(tripInfo.start_date), "MMM d")} - {format(new Date(tripInfo.end_date), "MMM d, yyyy")}
+                </p>
+              )}
+            </div>
+            <Button onClick={() => setIsCreating(!isCreating)} size="lg" className="gap-2 shadow-lg">
+              <Plus className="w-4 h-4" />
+              New Entry
+            </Button>
           </div>
-          <Button onClick={() => setIsCreating(!isCreating)} size="lg" className="gap-2 shadow-lg">
-            <Plus className="w-4 h-4" />
-            New Entry
-          </Button>
         </div>
 
         {/* Create New Entry Form */}
@@ -421,22 +454,21 @@ const JournalPage = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {entries.map((entry) => (
                 <Card
                   key={entry.id}
-                  className="group cursor-pointer overflow-hidden border-2 border-border hover:border-primary/50 hover:shadow-xl transition-all duration-300"
+                  className="group cursor-pointer overflow-hidden border border-border hover:border-primary/50 hover:shadow-lg transition-all duration-300"
                   onClick={() => setSelectedEntry(entry)}
                 >
                   {/* Cover Photo */}
                   {entry.photos.length > 0 && (
-                    <div className="relative h-64 overflow-hidden">
+                    <div className="relative h-32 overflow-hidden">
                       <img
                         src={entry.photos[0]}
                         alt={entry.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                       
                       {/* Delete Button */}
                       <Button
@@ -446,45 +478,42 @@ const JournalPage = () => {
                           e.stopPropagation();
                           deleteEntry(entry.id);
                         }}
-                        className="absolute top-3 right-3 bg-black/50 hover:bg-destructive text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 bg-black/50 hover:bg-destructive text-white opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   )}
 
-                  <CardContent className="p-6">
-                    {/* Title */}
-                    <h2 className="text-2xl font-bold text-foreground mb-3 line-clamp-2">
-                      {entry.title}
-                    </h2>
-
-                    {/* Date */}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                      <Calendar className="w-4 h-4" />
-                      {new Date(entry.date).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </div>
-
-                    {/* Text Snippet */}
-                    {entry.notes && (
-                      <p className="text-foreground/80 text-sm leading-relaxed line-clamp-3">
-                        {entry.notes}
-                      </p>
-                    )}
-
-                    {/* Photo Count Badge */}
-                    {entry.photos.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-border">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <ImageIcon className="w-3 h-3" />
-                          <span>{entry.photos.length} {entry.photos.length === 1 ? 'photo' : 'photos'}</span>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors mb-1 truncate">
+                          {entry.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                          <Calendar className="w-3 h-3 flex-shrink-0" />
+                          <span>{new Date(entry.date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}</span>
                         </div>
                       </div>
-                    )}
+                      {!entry.photos.length && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteEntry(entry.id);
+                          }}
+                          className="text-muted-foreground hover:text-destructive flex-shrink-0"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
