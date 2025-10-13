@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { TripDay, Stop } from "@/types/trip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { X, Plus, Sunrise, Sunset, Hotel } from "lucide-react";
+import { X, Plus, Sunrise, Sunset } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimelineView from "./TimelineView";
 import MapView from "./MapView";
@@ -103,31 +103,17 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
                   onCancel={() => setEditingStopId(null)}
                 />
               ) : !showAddForm ? (
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => {
-                      setInsertAtIndex(undefined);
-                      setShowAddForm(true);
-                    }}
-                    variant="outline"
-                    className="w-full mb-2 h-10 font-bold uppercase text-xs tracking-wider"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Event {insertAtIndex !== undefined ? `(Position ${insertAtIndex + 1})` : ''}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setInsertAtIndex(undefined);
-                      setShowAddForm(true);
-                      // Pre-fill accommodation
-                    }}
-                    variant="secondary"
-                    className="w-full h-9 text-xs tracking-wider"
-                  >
-                    <Hotel className="w-4 h-4 mr-2" />
-                    Quick Add Accommodation
-                  </Button>
-                </div>
+                <Button
+                  onClick={() => {
+                    setInsertAtIndex(undefined);
+                    setShowAddForm(true);
+                  }}
+                  variant="outline"
+                  className="w-full mb-4 h-10 font-bold uppercase text-xs tracking-wider"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Event {insertAtIndex !== undefined ? `(Position ${insertAtIndex + 1})` : ''}
+                </Button>
               ) : (
                 <AddEventForm
                   onAddEvent={handleAddEvent}
