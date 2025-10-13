@@ -314,11 +314,24 @@ const Index = () => {
   const handleRemoveDay = async (dayId: string) => {
     if (!trip || !tripId) return;
 
+    const dayIndex = trip.days.findIndex(day => day.id === dayId);
+    if (dayIndex === -1) return;
+
+    // Create a copy and remove the day
     const updatedDays = trip.days.filter(day => day.id !== dayId);
     
     if (updatedDays.length === 0) {
       toast.error("Cannot remove the last day");
       return;
+    }
+
+    // Shift all subsequent days back by one day
+    for (let i = dayIndex; i < updatedDays.length; i++) {
+      const currentDate = new Date(updatedDays[i].date);
+      updatedDays[i] = {
+        ...updatedDays[i],
+        date: format(addDays(currentDate, -1), "MMM d, yyyy")
+      };
     }
 
     // Calculate new start and end dates from the updated days array
