@@ -5,15 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Image as ImageIcon, Calendar as CalendarIcon, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon, Calendar as CalendarIcon, ArrowLeft, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import PhotoAlbumView from "@/components/PhotoAlbumView";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, isWithinInterval, parseISO } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import type { Trip } from "@/types/trip";
 import samplePhoto1 from "@/assets/journal-sample-1.jpg";
 import samplePhoto2 from "@/assets/journal-sample-2.jpg";
 import samplePhoto3 from "@/assets/journal-sample-3.jpg";
@@ -41,45 +42,7 @@ interface JournalEntry {
   photoCaptions?: string[];
 }
 
-const templateEntries: JournalEntry[] = [
-  {
-    id: "template-1",
-    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    title: "Coastal Roadtrip",
-    notes: "The Pacific Coast Highway delivered everything we dreamed of and more. Miles of dramatic cliffs plunging into the azure ocean, hidden beaches accessible only by winding trails, and sunsets that painted the sky in shades of orange and pink. We stopped at every scenic overlook, dined on fresh seafood at seaside cafes, and fell asleep to the sound of crashing waves. This stretch of coastline is pure magic.",
-    photos: [beachPhoto1, beachPhoto2, beachPhoto3],
-    photoCaptions: [
-      "Private beach cove with crystal-clear turquoise water and swaying palms",
-      "Historic lighthouse perched on dramatic cliffs at sunset",
-      "Beachside lunch with fresh seafood and ocean views"
-    ],
-  },
-  {
-    id: "template-2",
-    date: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-    title: "Mountain Adventure",
-    notes: "Winding mountain roads led us higher and higher into alpine wilderness. Each switchback revealed breathtaking vistas of snow-capped peaks and pristine lakes reflecting the sky like mirrors. We hiked through forests of towering pines, discovered hidden waterfalls cascading down mossy rocks, and breathed the crisp mountain air that seemed to clear away all worries. The mountains renewed our spirits.",
-    photos: [mountainPhoto1, mountainPhoto2, mountainPhoto3],
-    photoCaptions: [
-      "Mirror-like reflection at dawn - the lake was perfectly still",
-      "Hiked to this hidden waterfall deep in the forest",
-      "Alpine meadows bursting with wildflowers in full bloom"
-    ],
-  },
-  {
-    id: "template-3",
-    date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-    title: "City Escape",
-    notes: "Sometimes the best roadtrips lead you to unexpected urban adventures. We explored vibrant neighborhoods filled with street art, discovered hole-in-the-wall restaurants serving incredible food, and wandered through historic districts where old meets new. From rooftop bars with skyline views to quiet parks offering refuge from the hustle, the city revealed its hidden gems one block at a time.",
-    photos: [fallPhoto1, fallPhoto2, fallPhoto3, fallPhoto4],
-    photoCaptions: [
-      "Colorful street art alley - every wall tells a story",
-      "Historic district with charming architecture and cobblestone streets",
-      "Local market overflowing with fresh produce and artisan goods",
-      "Sunset view from the rooftop - the city lights beginning to glow"
-    ],
-  },
-];
+// Removed template entries - journals now start empty
 
 const JournalPage = () => {
   const { toast } = useToast();
@@ -90,6 +53,8 @@ const JournalPage = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [tripInfo, setTripInfo] = useState<{ title: string; start_date: string; end_date: string } | null>(null);
+  const [fullTripData, setFullTripData] = useState<Trip | null>(null);
+  const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const [newEntry, setNewEntry] = useState({
     title: "",
     date: new Date(),
@@ -113,33 +78,32 @@ const JournalPage = () => {
     const fetchTripInfo = async () => {
       const { data, error } = await supabase
         .from("trips")
-        .select("title, start_date, end_date")
+        .select("title, start_date, end_date, trip_data")
         .eq("id", tripId)
         .single();
 
       if (!error && data) {
-        setTripInfo(data);
+        setTripInfo({ title: data.title, start_date: data.start_date, end_date: data.end_date });
+        // Parse trip_data as Trip type - it contains the days array
+        const tripData = data.trip_data as any;
+        setFullTripData(tripData);
       }
     };
 
     fetchTripInfo();
     
-    // Load entries from localStorage
+    // Load entries from localStorage - start empty if none exist
     const stored = localStorage.getItem(`journal-entries-${tripId}`);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed.length > 0) {
-          setEntries(parsed);
-        } else {
-          setEntries(templateEntries);
-        }
+        setEntries(parsed);
       } catch (error) {
         console.error("Error parsing journal entries:", error);
-        setEntries(templateEntries);
+        setEntries([]);
       }
     } else {
-      setEntries(templateEntries);
+      setEntries([]);
     }
   }, [tripId]);
 
@@ -291,6 +255,58 @@ const JournalPage = () => {
     });
   };
 
+  const handleGetAISuggestions = async () => {
+    if (!fullTripData) {
+      toast({
+        title: "Trip data not available",
+        description: "Unable to generate suggestions at this time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingSuggestions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-journal-entry', {
+        body: {
+          selectedDate: newEntry.date.toISOString(),
+          tripData: fullTripData
+        }
+      });
+
+      if (error) {
+        console.error("Error getting AI suggestions:", error);
+        toast({
+          title: "Failed to generate suggestions",
+          description: error.message || "Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data) {
+        setNewEntry(prev => ({
+          ...prev,
+          title: data.title || prev.title,
+          notes: data.notes || prev.notes,
+        }));
+        toast({
+          title: "Suggestions generated",
+          description: "AI has suggested a title and notes based on your planned activities.",
+        });
+      }
+    } catch (error) {
+      console.error("Error calling AI function:", error);
+      toast({
+        title: "Error",
+        description: "Failed to get AI suggestions.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingSuggestions(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -354,7 +370,20 @@ const JournalPage = () => {
             </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="title">Title</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleGetAISuggestions}
+                  disabled={isGeneratingSuggestions}
+                  className="gap-2 text-xs"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {isGeneratingSuggestions ? "Generating..." : "AI Suggest"}
+                </Button>
+              </div>
               <Input
                 id="title"
                 placeholder="Give your entry a title..."
@@ -386,6 +415,12 @@ const JournalPage = () => {
                     onSelect={(date) => date && setNewEntry({ ...newEntry, date })}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
+                    disabled={(date) => {
+                      if (!tripInfo) return false;
+                      const tripStart = parseISO(tripInfo.start_date);
+                      const tripEnd = parseISO(tripInfo.end_date);
+                      return !isWithinInterval(date, { start: tripStart, end: tripEnd });
+                    }}
                   />
                 </PopoverContent>
               </Popover>
