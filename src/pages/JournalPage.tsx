@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Image as ImageIcon, Calendar, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon, Calendar as CalendarIcon, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import PhotoAlbumView from "@/components/PhotoAlbumView";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import samplePhoto1 from "@/assets/journal-sample-1.jpg";
 import samplePhoto2 from "@/assets/journal-sample-2.jpg";
 import samplePhoto3 from "@/assets/journal-sample-3.jpg";
@@ -89,6 +92,7 @@ const JournalPage = () => {
   const [tripInfo, setTripInfo] = useState<{ title: string; start_date: string; end_date: string } | null>(null);
   const [newEntry, setNewEntry] = useState({
     title: "",
+    date: new Date(),
     notes: "",
     photos: [] as string[],
     photoCaptions: [] as string[],
@@ -262,7 +266,7 @@ const JournalPage = () => {
 
     const entry: JournalEntry = {
       id: Date.now().toString(),
-      date: new Date().toISOString(),
+      date: newEntry.date.toISOString(),
       title: newEntry.title,
       notes: newEntry.notes,
       photos: newEntry.photos,
@@ -270,7 +274,7 @@ const JournalPage = () => {
     };
 
     setEntries([entry, ...entries]);
-    setNewEntry({ title: "", notes: "", photos: [], photoCaptions: [] });
+    setNewEntry({ title: "", date: new Date(), notes: "", photos: [], photoCaptions: [] });
     setIsCreating(false);
 
     toast({
@@ -358,6 +362,33 @@ const JournalPage = () => {
                 onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
                 maxLength={100}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !newEntry.date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newEntry.date ? format(newEntry.date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newEntry.date}
+                    onSelect={(date) => date && setNewEntry({ ...newEntry, date })}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
@@ -492,7 +523,7 @@ const JournalPage = () => {
                           {entry.title}
                         </h3>
                         <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                          <Calendar className="w-3 h-3 flex-shrink-0" />
+                          <CalendarIcon className="w-3 h-3 flex-shrink-0" />
                           <span>{new Date(entry.date).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",

@@ -472,15 +472,9 @@ const InspoPage = () => {
 
         <div className="mb-12">
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <h1 className="text-4xl sm:text-5xl font-bold text-foreground">
-                Road Trip Inspiration
-              </h1>
-              <Button onClick={() => setIsCreating(true)} size="lg" className="gap-2">
-                <Plus className="w-5 h-5" />
-                New Post
-              </Button>
-            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
+              Road Trip Inspiration
+            </h1>
             <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto">
               Discover epic journeys and plan your next adventure with our curated collection of road trip stories
             </p>
