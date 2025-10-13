@@ -114,29 +114,25 @@ const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, onDelet
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       )}
+                      {!isLast && onAddAfter && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 border border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-all ml-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddAfter(index);
+                          }}
+                          title="Add event after this"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
               </div>
-              
-              {/* Add button between stops */}
-              {!isLast && onAddAfter && (
-                <div className="relative flex justify-center my-2">
-                  <div className="absolute left-5 top-0 w-0.5 h-full -ml-px bg-border" />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative z-10 h-8 w-8 rounded-full bg-background border-2 border-dashed border-border hover:border-primary hover:bg-primary/10 hover:scale-110 transition-all"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddAfter(index);
-                    }}
-                  >
-                    <Plus className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                  </Button>
-                </div>
-              )}
             </div>
           );
         })}
