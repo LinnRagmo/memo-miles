@@ -2,6 +2,7 @@ import { TripDay, Stop } from "@/types/trip";
 import { Car, MapPin, Coffee, Camera, Pencil, Trash2, Plus, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useRef, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -51,6 +52,18 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
     isDragging,
   } = useSortable({ id: stop.id });
 
+  const stopRef = useRef<HTMLDivElement>(null);
+
+  // Scroll into view when highlighted
+  useEffect(() => {
+    if (isHighlighted && stopRef.current) {
+      stopRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center'
+      });
+    }
+  }, [isHighlighted]);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -62,6 +75,7 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
   return (
     <div ref={setNodeRef} style={style}>
       <div
+        ref={stopRef}
         className={`relative flex gap-4 group cursor-pointer transition-all ${
           isHighlighted ? 'scale-[1.02]' : ''
         } ${isDragging ? 'z-50' : ''}`}
