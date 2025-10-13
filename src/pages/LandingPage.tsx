@@ -25,7 +25,7 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center">
+    <div className="relative h-screen w-full flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
