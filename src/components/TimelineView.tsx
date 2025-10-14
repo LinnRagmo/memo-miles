@@ -1,8 +1,11 @@
 import { TripDay, Stop } from "@/types/trip";
 import { Car, MapPin, Coffee, Camera, Pencil, Trash2, Plus, GripVertical, Hotel, Mountain, Utensils, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { useRef, useEffect } from "react";
+import EditEventForm from "./EditEventForm";
+import AddEventForm from "./AddEventForm";
+import { useRef, useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -26,8 +29,11 @@ interface TimelineViewProps {
   onStopClick?: (stopId: string) => void;
   highlightedStopId?: string;
   onEditStop?: (stopId: string) => void;
+  editingStopId?: string | null;
+  onSaveEdit?: (stopId: string, updatedStop: Omit<Stop, "id">) => void;
+  onCancelEdit?: () => void;
   onDeleteStop?: (stopId: string) => void;
-  onAddAfter?: (index: number) => void;
+  onAddEvent?: (event: Omit<Stop, "id">, insertAtIndex?: number) => void;
   onReorderStops?: (stops: Stop[]) => void;
 }
 
@@ -36,13 +42,17 @@ interface SortableStopProps {
   index: number;
   isLast: boolean;
   isHighlighted: boolean;
+  isEditing: boolean;
   onStopClick?: (stopId: string) => void;
   onEditStop?: (stopId: string) => void;
+  onSaveEdit?: (stopId: string, updatedStop: Omit<Stop, "id">) => void;
+  onCancelEdit?: () => void;
   onDeleteStop?: (stopId: string) => void;
-  onAddAfter?: (index: number) => void;
+  onAddEvent?: (event: Omit<Stop, "id">, insertAtIndex?: number) => void;
 }
 
-const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditStop, onDeleteStop, onAddAfter }: SortableStopProps) => {
+const SortableStop = ({ stop, index, isLast, isHighlighted, isEditing, onStopClick, onEditStop, onSaveEdit, onCancelEdit, onDeleteStop, onAddEvent }: SortableStopProps) => {
+  const [showAddAfterPopover, setShowAddAfterPopover] = useState(false);
   const {
     attributes,
     listeners,
@@ -176,18 +186,29 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
                     isHighlighted ? 'text-primary' : 'text-muted-foreground'
                   }`} />
                 )}
-                {onEditStop && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditStop(stop.id);
-                    }}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
+                {onEditStop && onSaveEdit && onCancelEdit && (
+                  <Popover open={isEditing} onOpenChange={(open) => !open && onCancelEdit()}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditStop(stop.id);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-96 p-0" align="end" side="left">
+                      <EditEventForm
+                        stop={stop}
+                        onSave={(stopId, updatedStop) => onSaveEdit(stopId, updatedStop)}
+                        onCancel={onCancelEdit}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 )}
                 {onDeleteStop && (
                   <Button
@@ -209,21 +230,30 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
       </div>
       
       {/* Add button on timeline between stops */}
-      {!isLast && onAddAfter && (
+      {!isLast && onAddEvent && (
         <div className="relative flex justify-start h-12 ml-5">
           <div className="absolute left-0 top-0 w-0.5 h-full -ml-px bg-border" />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative z-10 -ml-4 h-8 w-8 rounded-full bg-background border-2 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary hover:scale-110 transition-all"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddAfter(index);
-            }}
-            title="Add event after this"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
+          <Popover open={showAddAfterPopover} onOpenChange={setShowAddAfterPopover}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative z-10 -ml-4 h-8 w-8 rounded-full bg-background border-2 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary hover:scale-110 transition-all"
+                title="Add event after this"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-96 p-0" align="start" side="right">
+              <AddEventForm
+                onAddEvent={(event) => {
+                  onAddEvent(event, index + 1);
+                  setShowAddAfterPopover(false);
+                }}
+                onCancel={() => setShowAddAfterPopover(false)}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       )}
     </div>
@@ -258,7 +288,7 @@ const getStopIcon = (type: Stop['type'], activityIcon?: Stop['activityIcon']) =>
   }
 };
 
-const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, onDeleteStop, onAddAfter, onReorderStops }: TimelineViewProps) => {
+const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, editingStopId, onSaveEdit, onCancelEdit, onDeleteStop, onAddEvent, onReorderStops }: TimelineViewProps) => {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -314,6 +344,7 @@ const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, onDelet
             {day.stops.map((stop, index) => {
               const isLast = index === day.stops.length - 1;
               const isHighlighted = highlightedStopId === stop.id;
+              const isEditing = editingStopId === stop.id;
               
               return (
                 <SortableStop
@@ -322,10 +353,13 @@ const TimelineView = ({ day, onStopClick, highlightedStopId, onEditStop, onDelet
                   index={index}
                   isLast={isLast}
                   isHighlighted={isHighlighted}
+                  isEditing={isEditing}
                   onStopClick={onStopClick}
                   onEditStop={onEditStop}
+                  onSaveEdit={onSaveEdit}
+                  onCancelEdit={onCancelEdit}
                   onDeleteStop={onDeleteStop}
-                  onAddAfter={onAddAfter}
+                  onAddEvent={onAddEvent}
                 />
               );
             })}

@@ -3,6 +3,7 @@ import { TripDay, Stop } from "@/types/trip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X, Plus, Sunrise, Sunset } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import TimelineView from "./TimelineView";
 import MapView from "./MapView";
 import AddEventForm from "./AddEventForm";
@@ -19,22 +20,14 @@ interface DayDetailModalProps {
 
 const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDeleteEvent }: DayDetailModalProps) => {
   const [highlightedStopId, setHighlightedStopId] = useState<string | undefined>();
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [insertAtIndex, setInsertAtIndex] = useState<number | undefined>();
+  const [showAddFormPopover, setShowAddFormPopover] = useState(false);
   const [editingStopId, setEditingStopId] = useState<string | null>(null);
 
   if (!day) return null;
 
-  const handleAddEvent = (event: Omit<Stop, "id">) => {
+  const handleAddEvent = (event: Omit<Stop, "id">, insertAtIndex?: number) => {
     onAddEvent(day.id, event, insertAtIndex);
-    setShowAddForm(false);
-    setInsertAtIndex(undefined);
-  };
-  
-  const handleAddAfter = (index: number) => {
-    setEditingStopId(null);
-    setInsertAtIndex(index + 1);
-    setShowAddForm(true);
+    setShowAddFormPopover(false);
   };
 
   const handleEditEvent = (stopId: string, updatedStop: Omit<Stop, "id">) => {
@@ -96,45 +89,34 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
           {/* Left Panel - Timeline */}
           <div className="w-1/2 border-r border-border overflow-y-auto bg-background">
             <div className="p-4">
-              {editingStop ? (
-                <EditEventForm
-                  stop={editingStop}
-                  onSave={handleEditEvent}
-                  onCancel={() => setEditingStopId(null)}
-                />
-              ) : !showAddForm ? (
-                <Button
-                  onClick={() => {
-                    setInsertAtIndex(undefined);
-                    setShowAddForm(true);
-                  }}
-                  variant="outline"
-                  className="w-full mb-4 h-10 font-bold uppercase text-xs tracking-wider"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Event {insertAtIndex !== undefined ? `(Position ${insertAtIndex + 1})` : ''}
-                </Button>
-              ) : (
-                <AddEventForm
-                  onAddEvent={handleAddEvent}
-                  onCancel={() => {
-                    setShowAddForm(false);
-                    setInsertAtIndex(undefined);
-                  }}
-                />
-              )}
+              <Popover open={showAddFormPopover} onOpenChange={setShowAddFormPopover}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full mb-4 h-10 font-bold uppercase text-xs tracking-wider"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Event
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-96 p-0" align="start" side="bottom">
+                  <AddEventForm
+                    onAddEvent={handleAddEvent}
+                    onCancel={() => setShowAddFormPopover(false)}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <TimelineView 
               day={day} 
               onStopClick={handleStopClick}
               highlightedStopId={highlightedStopId}
-              onEditStop={(stopId) => {
-                setShowAddForm(false);
-                setInsertAtIndex(undefined);
-                setEditingStopId(stopId);
-              }}
+              onEditStop={setEditingStopId}
+              editingStopId={editingStopId}
+              onSaveEdit={handleEditEvent}
+              onCancelEdit={() => setEditingStopId(null)}
               onDeleteStop={handleDeleteEvent}
-              onAddAfter={handleAddAfter}
+              onAddEvent={handleAddEvent}
               onReorderStops={(reorderedStops) => {
                 onUpdateEvent(day.id, '', { stops: reorderedStops } as any);
               }}
