@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Session } from "@supabase/supabase-js";
 import { z } from "zod";
-import australiaRoadTripImg from "@/assets/australia-road-trip.jpg";
+import authBackgroundImg from "@/assets/auth-background.jpg";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -139,7 +139,7 @@ const AuthPage = () => {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url(${australiaRoadTripImg})`,
+          backgroundImage: `url(${authBackgroundImg})`,
           filter: "brightness(0.85) saturate(1.1)",
         }}
       />
