@@ -111,6 +111,26 @@ const sampleTrips: RoadTripPost[] = [
       { location: "Issy", description: "Varning för sprängning" },
     ],
   },
+  {
+    id: "5",
+    title: "Skåne får lajf",
+    description: "A breathtaking journey from Skåne to Stockholm.",
+    duration: "2 Days",
+    distance: "600 miles",
+    author: "Lisen",
+    date: "May 18, 2024",
+    readTime: "8 min read",
+    heroImage: heroImagePCH,
+    highlights: ["Stadshuset", "Skåne", "Jönköping", "Linköping"],
+    stops: [
+      { location: "Malmö", description: "Börja i Skånes pärla" },
+      { location: "Lund", description: "Sveriges näst bästa universitet" },
+      { location: "Jönköping", description: "Vid Vätterns ände" },
+      { location: "Gränna", description: "Polkisar" },
+      { location: "Linköping", description: "Cloetta och Saab" },
+      { location: "Stockohlm", description: "Stadshuset och Vasamuseet" },
+    ],
+  },
 ];
 
 const InspoPage = () => {
