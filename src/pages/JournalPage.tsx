@@ -282,7 +282,7 @@ const JournalPage = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/journal-select")}
               className="hover:bg-accent"
             >
               <ArrowLeft className="w-5 h-5" />
