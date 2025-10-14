@@ -63,6 +63,41 @@ export async function geocodeLocation(
   }
 }
 
+export async function geocodeDriveRoute(
+  driveLocation: string,
+  mapboxToken: string
+): Promise<{ 
+  startResult: GeocodingResult | null; 
+  endResult: GeocodingResult | null;
+  midpoint?: [number, number];
+} | null> {
+  // Split drive route by " to " separator
+  const parts = driveLocation.split(/\s+to\s+/i);
+  
+  if (parts.length !== 2) {
+    console.error(`Invalid drive format: "${driveLocation}". Expected "Start to End"`);
+    return null;
+  }
+
+  const [startLocation, endLocation] = parts.map(s => s.trim());
+  
+  // Geocode both locations
+  const startResult = await geocodeLocation(startLocation, mapboxToken);
+  const endResult = await geocodeLocation(endLocation, mapboxToken);
+
+  if (!startResult || !endResult) {
+    return { startResult, endResult };
+  }
+
+  // Calculate midpoint
+  const midpoint: [number, number] = [
+    (startResult.coordinates[0] + endResult.coordinates[0]) / 2,
+    (startResult.coordinates[1] + endResult.coordinates[1]) / 2
+  ];
+
+  return { startResult, endResult, midpoint };
+}
+
 export async function geocodeMultipleLocations(
   locations: string[],
   mapboxToken: string,

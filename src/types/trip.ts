@@ -22,6 +22,8 @@ export interface Stop {
   endLocation?: string;
   drivingTime?: string;
   distance?: string;
+  startCoordinates?: [number, number];
+  endCoordinates?: [number, number];
 }
 
 export interface Trip {

@@ -11,7 +11,7 @@ import { Plus, X, Mountain, Utensils, Camera, Coffee, Eye, Loader2, Heart, MapPi
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useFavorites } from "@/contexts/FavoritesContext";
-import { geocodeLocation } from "@/lib/geocoding";
+import { geocodeLocation, geocodeDriveRoute } from "@/lib/geocoding";
 
 interface AddEventFormProps {
   onAddEvent: (event: Omit<Stop, "id">) => void;
@@ -43,6 +43,8 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [verifiedPlace, setVerifiedPlace] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'warning'>('idle');
   const [mapboxToken, setMapboxToken] = useState<string>("");
+  const [verifiedStartPlace, setVerifiedStartPlace] = useState<string | null>(null);
+  const [verifiedEndPlace, setVerifiedEndPlace] = useState<string | null>(null);
 
   // Load Mapbox token
   useState(() => {
@@ -84,6 +86,49 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     } catch (error) {
       console.error("Verification error:", error);
       toast.error("Failed to verify location");
+      setVerificationStatus('idle');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleVerifyDriveRoute = async () => {
+    if (!startLocation.trim() || !endLocation.trim() || !mapboxToken) {
+      if (!mapboxToken) {
+        toast.error("Mapbox token not found. Please view the map first to set it up.");
+      }
+      return;
+    }
+
+    setVerifying(true);
+    setVerificationStatus('idle');
+    setVerifiedStartPlace(null);
+    setVerifiedEndPlace(null);
+
+    try {
+      const driveLocation = `${startLocation} to ${endLocation}`;
+      const result = await geocodeDriveRoute(driveLocation, mapboxToken);
+      
+      if (result && result.startResult && result.endResult) {
+        setVerifiedStartPlace(result.startResult.placeName);
+        setVerifiedEndPlace(result.endResult.placeName);
+        
+        // Check if both locations have country info
+        const startHasCountry = startLocation.includes(',') || startLocation.split(/\s+/).length > 1;
+        const endHasCountry = endLocation.includes(',') || endLocation.split(/\s+/).length > 1;
+        
+        if (!startHasCountry || !endHasCountry) {
+          setVerificationStatus('warning');
+        } else {
+          setVerificationStatus('success');
+        }
+      } else {
+        toast.error("One or both locations not found. Try adding country names.");
+        setVerificationStatus('idle');
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      toast.error("Failed to verify drive route");
       setVerificationStatus('idle');
     } finally {
       setVerifying(false);
@@ -149,6 +194,8 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     setDrivingTime("");
     setDistance("");
     setVerifiedPlace(null);
+    setVerifiedStartPlace(null);
+    setVerifiedEndPlace(null);
     setVerificationStatus('idle');
   };
 
@@ -238,7 +285,12 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
               id="startLocation"
               type="text"
               value={startLocation}
-              onChange={(e) => setStartLocation(e.target.value)}
+              onChange={(e) => {
+                setStartLocation(e.target.value);
+                setVerifiedStartPlace(null);
+                setVerifiedEndPlace(null);
+                setVerificationStatus('idle');
+              }}
               placeholder="Enter start location..."
               required
               className="h-9"
@@ -252,12 +304,68 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
               id="endLocation"
               type="text"
               value={endLocation}
-              onChange={(e) => setEndLocation(e.target.value)}
+              onChange={(e) => {
+                setEndLocation(e.target.value);
+                setVerifiedStartPlace(null);
+                setVerifiedEndPlace(null);
+                setVerificationStatus('idle');
+              }}
               placeholder="Enter end location..."
               required
               className="h-9"
             />
           </div>
+          
+          <div className="mb-3">
+            <div className="flex items-start gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleVerifyDriveRoute}
+                disabled={!startLocation.trim() || !endLocation.trim() || verifying || !mapboxToken}
+                className="h-8 text-xs"
+              >
+                {verifying ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-3 h-3 mr-1" />
+                    Verify Route
+                  </>
+                )}
+              </Button>
+              
+              {verificationStatus !== 'idle' && verifiedStartPlace && verifiedEndPlace && (
+                <div className={`flex-1 flex flex-col gap-1 p-2 rounded-md text-xs ${
+                  verificationStatus === 'success' 
+                    ? 'bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20' 
+                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                }`}>
+                  <div className="flex items-start gap-1.5">
+                    {verificationStatus === 'success' ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium">Start: {verifiedStartPlace}</div>
+                      <div className="font-medium mt-0.5">End: {verifiedEndPlace}</div>
+                      {verificationStatus === 'warning' && (
+                        <div className="text-[10px] mt-0.5 opacity-90">
+                          Add country names for accuracy
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
           {drivingTime && (
             <div className="p-3 bg-muted/50 rounded-md border border-border">
               <p className="text-sm text-foreground">

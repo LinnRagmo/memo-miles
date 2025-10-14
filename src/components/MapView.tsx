@@ -5,7 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { MapPin, Navigation, Key } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { geocodeMultipleLocations } from "@/lib/geocoding";
+import { geocodeMultipleLocations, geocodeDriveRoute } from "@/lib/geocoding";
 
 interface MapViewProps {
   stops: Stop[];
@@ -43,22 +43,41 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
     const geocodeStops = async () => {
       setIsGeocoding(true);
       
-      const locationsToGeocode = stopsNeedingGeocode.map(stop => stop.location);
-      const results = await geocodeMultipleLocations(
-        locationsToGeocode, 
-        mapboxToken,
-        (completed, total) => setGeocodingProgress({ completed, total })
-      );
-
       const newGeocodedStops = new Map(geocodedStops);
-      stopsNeedingGeocode.forEach(stop => {
-        const result = results.get(stop.location);
-        if (result) {
-          newGeocodedStops.set(stop.id, result.coordinates);
-          // Notify parent component about the geocoded coordinates
-          onCoordinatesGeocoded?.(stop.id, result.coordinates);
+      let completed = 0;
+
+      for (const stop of stopsNeedingGeocode) {
+        // Check if it's a drive event
+        if (stop.type === 'drive' && stop.location.includes(' to ')) {
+          const driveResult = await geocodeDriveRoute(stop.location, mapboxToken);
+          
+          if (driveResult && driveResult.startResult && driveResult.endResult) {
+            // Use start location for the marker
+            newGeocodedStops.set(stop.id, driveResult.startResult.coordinates);
+            // Notify with start coordinates
+            onCoordinatesGeocoded?.(stop.id, driveResult.startResult.coordinates);
+          }
+        } else {
+          // Regular geocoding for non-drive events
+          const locationsToGeocode = [stop.location];
+          const results = await geocodeMultipleLocations(
+            locationsToGeocode, 
+            mapboxToken
+          );
+          
+          const result = results.get(stop.location);
+          if (result) {
+            newGeocodedStops.set(stop.id, result.coordinates);
+            onCoordinatesGeocoded?.(stop.id, result.coordinates);
+          }
         }
-      });
+
+        completed++;
+        setGeocodingProgress({ completed, total: stopsNeedingGeocode.length });
+        
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
       setGeocodedStops(newGeocodedStops);
       setIsGeocoding(false);

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, X, Mountain, Utensils, Camera, Coffee, Eye, MapPin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import { geocodeLocation } from "@/lib/geocoding";
+import { geocodeLocation, geocodeDriveRoute } from "@/lib/geocoding";
 import { toast } from "sonner";
 
 const activityIcons = [
@@ -33,6 +33,8 @@ const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
   const [verifiedPlace, setVerifiedPlace] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'warning'>('idle');
   const [mapboxToken, setMapboxToken] = useState<string>("");
+  const [verifiedStartPlace, setVerifiedStartPlace] = useState<string | null>(null);
+  const [verifiedEndPlace, setVerifiedEndPlace] = useState<string | null>(null);
 
   // Load Mapbox token
   useState(() => {
@@ -43,6 +45,9 @@ const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
   });
 
   const handleVerifyLocation = async () => {
+    // Check if it's a drive event with "to" separator
+    const isDrive = type === 'drive' && location.includes(' to ');
+    
     if (!location.trim() || !mapboxToken) {
       if (!mapboxToken) {
         toast.error("Mapbox token not found. Please view the map first to set it up.");
@@ -53,23 +58,48 @@ const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
     setVerifying(true);
     setVerificationStatus('idle');
     setVerifiedPlace(null);
+    setVerifiedStartPlace(null);
+    setVerifiedEndPlace(null);
 
     try {
-      const result = await geocodeLocation(location, mapboxToken);
-      
-      if (result) {
-        setVerifiedPlace(result.placeName);
+      if (isDrive) {
+        // Handle drive route verification
+        const result = await geocodeDriveRoute(location, mapboxToken);
         
-        // Check if the geocoded country matches user's intent
-        const userProvidedCountry = location.includes(',') || location.split(/\s+/).length > 1;
-        if (!userProvidedCountry && result.placeName) {
-          setVerificationStatus('warning');
+        if (result && result.startResult && result.endResult) {
+          setVerifiedStartPlace(result.startResult.placeName);
+          setVerifiedEndPlace(result.endResult.placeName);
+          
+          const parts = location.split(/\s+to\s+/i);
+          const startHasCountry = parts[0]?.includes(',') || parts[0]?.split(/\s+/).length > 1;
+          const endHasCountry = parts[1]?.includes(',') || parts[1]?.split(/\s+/).length > 1;
+          
+          if (!startHasCountry || !endHasCountry) {
+            setVerificationStatus('warning');
+          } else {
+            setVerificationStatus('success');
+          }
         } else {
-          setVerificationStatus('success');
+          toast.error("One or both locations not found. Try adding country names.");
+          setVerificationStatus('idle');
         }
       } else {
-        toast.error("Location not found. Try adding the country name (e.g., 'Malmö, Sweden')");
-        setVerificationStatus('idle');
+        // Regular location verification
+        const result = await geocodeLocation(location, mapboxToken);
+        
+        if (result) {
+          setVerifiedPlace(result.placeName);
+          
+          const userProvidedCountry = location.includes(',') || location.split(/\s+/).length > 1;
+          if (!userProvidedCountry && result.placeName) {
+            setVerificationStatus('warning');
+          } else {
+            setVerificationStatus('success');
+          }
+        } else {
+          toast.error("Location not found. Try adding the country name (e.g., 'Malmö, Sweden')");
+          setVerificationStatus('idle');
+        }
       }
     } catch (error) {
       console.error("Verification error:", error);
