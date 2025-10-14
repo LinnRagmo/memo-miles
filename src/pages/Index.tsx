@@ -36,6 +36,11 @@ const Index = () => {
   const [isTotalRouteOpen, setIsTotalRouteOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor)
+  );
+
   // Auth check
   useEffect(() => {
     if (!authLoading && !user) {
@@ -567,10 +572,7 @@ const Index = () => {
 
   return (
     <DndContext
-      sensors={useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor)
-      )}
+      sensors={sensors}
       onDragEnd={(event) => {
         const { active, over } = event;
         
