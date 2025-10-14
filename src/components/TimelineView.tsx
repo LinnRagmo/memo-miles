@@ -1,5 +1,5 @@
 import { TripDay, Stop } from "@/types/trip";
-import { Car, MapPin, Coffee, Camera, Pencil, Trash2, Plus, GripVertical, Hotel, Mountain, Utensils, Eye } from "lucide-react";
+import { Car, MapPin, Coffee, Camera, Pencil, Trash2, Plus, Hotel, Mountain, Utensils, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -95,12 +95,9 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, isEditing, onStopCli
           <div className="absolute left-5 top-12 w-0.5 h-[calc(100%+3rem)] -ml-px bg-border" />
         )}
         
-        {/* Icon with drag handle */}
-        <div className="flex flex-col items-center gap-1">
-          <div className="cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
-            <GripVertical className="w-4 h-4 text-muted-foreground" />
-          </div>
-          <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
+        {/* Icon with drag handle (invisible but functional) */}
+        <div className="flex flex-col items-center gap-1" {...attributes} {...listeners}>
+          <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all cursor-grab active:cursor-grabbing ${
             stop.type === 'drive' ? 'bg-primary text-primary-foreground' :
             stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
             'bg-card border-2 border-border text-muted-foreground'
