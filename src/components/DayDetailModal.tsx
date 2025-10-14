@@ -58,7 +58,7 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] h-[90vh] p-0 gap-0 animate-fade-in">
+      <DialogContent className="max-w-[95vw] h-[90vh] p-0 gap-0 animate-fade-in" hideClose>
         <DialogHeader className="px-6 py-4 border-b border-border bg-card flex flex-row items-center justify-between">
           <div className="flex-1">
             <DialogTitle className="text-xl font-semibold text-foreground">{day.date}</DialogTitle>
@@ -86,7 +86,7 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 hover:bg-muted transition-colors"
+            className="rounded-lg p-2 hover:bg-muted transition-colors flex-shrink-0"
           >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
