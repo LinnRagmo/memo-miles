@@ -95,135 +95,133 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, isEditing, onStopCli
           <div className="absolute left-5 top-12 w-0.5 h-[calc(100%+3rem)] -ml-px bg-border" />
         )}
         
-        {/* Icon - drag handle */}
-        <div 
-          className="flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing"
-          {...attributes} 
-          {...listeners}
-        >
-          <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
-            stop.type === 'drive' ? 'bg-primary text-primary-foreground' :
-            stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
-            'bg-card border-2 border-border text-muted-foreground'
-          } ${isHighlighted ? 'ring-4 ring-primary/30 scale-110' : 'group-hover:scale-105'}`}>
-            <Icon className="w-5 h-5" />
-          </div>
-        </div>
-        
-        {/* Content */}
-        <div 
-          className="flex-1 pb-6"
-          onClick={() => onStopClick?.(stop.id)}
-        >
-          <div className={`relative bg-card rounded-lg border p-4 shadow-soft transition-all ${
-            isHighlighted 
-              ? 'border-primary shadow-medium ring-2 ring-primary/20' 
-              : 'border-border group-hover:shadow-medium group-hover:border-primary/50'
-          }`}>
-            {/* Number in bottom right corner */}
-            <div className="absolute bottom-2 right-2 text-muted-foreground/50 font-medium text-sm">
-              {index + 1}
+        {/* Icon and card - drag handle area */}
+        <div className="flex gap-4 flex-1 cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+          <div className="flex flex-col items-center gap-1">
+            <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
+              stop.type === 'drive' ? 'bg-primary text-primary-foreground' :
+              stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
+              'bg-card border-2 border-border text-muted-foreground'
+            } ${isHighlighted ? 'ring-4 ring-primary/30 scale-110' : 'group-hover:scale-105'}`}>
+              <Icon className="w-5 h-5" />
             </div>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                {/* Time - only show if it exists */}
-                {stop.time && (
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-primary">{stop.time}</span>
-                    {stop.type === 'drive' && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
-                        Driving
-                      </span>
-                    )}
-                    {stop.type === 'activity' && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
-                        Activity
-                      </span>
-                    )}
-                    {stop.type === 'accommodation' && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-secondary/10 text-secondary">
-                        Accommodation
-                      </span>
-                    )}
-                  </div>
-                )}
-                {!stop.time && (
-                  <div className="flex items-center gap-2 mb-1">
-                    {stop.type === 'drive' && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
-                        Driving
-                      </span>
-                    )}
-                    {stop.type === 'activity' && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
-                        Activity
-                      </span>
-                    )}
-                    {stop.type === 'accommodation' && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-secondary/10 text-secondary">
-                        Accommodation
-                      </span>
-                    )}
-                  </div>
-                )}
-                <h4 className="font-semibold text-foreground mb-1">{stop.location}</h4>
-                {stop.type === 'drive' && (stop.drivingTime || stop.distance) && (
-                  <div className="flex gap-3 mb-1">
-                    {stop.drivingTime && (
-                      <span className="text-sm text-muted-foreground">⏱ {stop.drivingTime}</span>
-                    )}
-                    {stop.distance && (
-                      <span className="text-sm text-muted-foreground">📍 {stop.distance}</span>
-                    )}
-                  </div>
-                )}
-                {stop.notes && (
-                  <p className="text-sm text-muted-foreground">{stop.notes}</p>
-                )}
+          </div>
+        
+          {/* Content */}
+          <div 
+            className="flex-1 pb-6"
+            onClick={() => onStopClick?.(stop.id)}
+          >
+            <div className={`relative bg-card rounded-lg border p-4 shadow-soft transition-all ${
+              isHighlighted 
+                ? 'border-primary shadow-medium ring-2 ring-primary/20' 
+                : 'border-border group-hover:shadow-medium group-hover:border-primary/50'
+            }`}>
+              {/* Number in bottom right corner */}
+              <div className="absolute bottom-2 right-2 text-muted-foreground/50 font-medium text-sm">
+                {index + 1}
               </div>
-              <div className="flex items-center gap-1">
-                {stop.coordinates && (
-                  <MapPin className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                    isHighlighted ? 'text-primary' : 'text-muted-foreground'
-                  }`} />
-                )}
-                {onEditStop && onSaveEdit && onCancelEdit && (
-                  <Popover open={isEditing} onOpenChange={(open) => !open && onCancelEdit()}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditStop(stop.id);
-                        }}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-96 p-0" align="end" side="left">
-                      <EditEventForm
-                        stop={stop}
-                        onSave={(stopId, updatedStop) => onSaveEdit(stopId, updatedStop)}
-                        onCancel={onCancelEdit}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                )}
-                {onDeleteStop && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteStop(stop.id);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  {/* Time - only show if it exists */}
+                  {stop.time && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-primary">{stop.time}</span>
+                      {stop.type === 'drive' && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                          Driving
+                        </span>
+                      )}
+                      {stop.type === 'activity' && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
+                          Activity
+                        </span>
+                      )}
+                      {stop.type === 'accommodation' && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-secondary/10 text-secondary">
+                          Accommodation
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {!stop.time && (
+                    <div className="flex items-center gap-2 mb-1">
+                      {stop.type === 'drive' && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                          Driving
+                        </span>
+                      )}
+                      {stop.type === 'activity' && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
+                          Activity
+                        </span>
+                      )}
+                      {stop.type === 'accommodation' && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-secondary/10 text-secondary">
+                          Accommodation
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <h4 className="font-semibold text-foreground mb-1">{stop.location}</h4>
+                  {stop.type === 'drive' && (stop.drivingTime || stop.distance) && (
+                    <div className="flex gap-3 mb-1">
+                      {stop.drivingTime && (
+                        <span className="text-sm text-muted-foreground">⏱ {stop.drivingTime}</span>
+                      )}
+                      {stop.distance && (
+                        <span className="text-sm text-muted-foreground">📍 {stop.distance}</span>
+                      )}
+                    </div>
+                  )}
+                  {stop.notes && (
+                    <p className="text-sm text-muted-foreground">{stop.notes}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()}>
+                  {stop.coordinates && (
+                    <MapPin className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                      isHighlighted ? 'text-primary' : 'text-muted-foreground'
+                    }`} />
+                  )}
+                  {onEditStop && onSaveEdit && onCancelEdit && (
+                    <Popover open={isEditing} onOpenChange={(open) => !open && onCancelEdit()}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditStop(stop.id);
+                          }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-96 p-0" align="end" side="left">
+                        <EditEventForm
+                          stop={stop}
+                          onSave={(stopId, updatedStop) => onSaveEdit(stopId, updatedStop)}
+                          onCancel={onCancelEdit}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                  {onDeleteStop && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteStop(stop.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
