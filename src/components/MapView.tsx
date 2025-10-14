@@ -11,7 +11,7 @@ interface MapViewProps {
   stops: Stop[];
   onStopClick?: (stopId: string) => void;
   highlightedStopId?: string;
-  onCoordinatesGeocoded?: (stopId: string, coordinates: [number, number]) => void;
+  onCoordinatesGeocoded?: (stopId: string, coordinates: [number, number], endCoordinates?: [number, number]) => void;
 }
 
 const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded }: MapViewProps) => {
@@ -21,6 +21,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
   const [mapboxToken, setMapboxToken] = useState<string>("");
   const [isMapInitialized, setIsMapInitialized] = useState(false);
   const [geocodedStops, setGeocodedStops] = useState<Map<string, [number, number]>>(new Map());
+  const [geocodedDriveRoutes, setGeocodedDriveRoutes] = useState<Map<string, { start: [number, number], end: [number, number] }>>(new Map());
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodingProgress, setGeocodingProgress] = useState({ completed: 0, total: 0 });
 
@@ -54,8 +55,17 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
           if (driveResult && driveResult.startResult && driveResult.endResult) {
             // Use start location for the marker
             newGeocodedStops.set(stop.id, driveResult.startResult.coordinates);
-            // Notify with start coordinates
-            onCoordinatesGeocoded?.(stop.id, driveResult.startResult.coordinates);
+            
+            // Store drive route with both start and end
+            const newDriveRoutes = new Map(geocodedDriveRoutes);
+            newDriveRoutes.set(stop.id, {
+              start: driveResult.startResult.coordinates,
+              end: driveResult.endResult.coordinates
+            });
+            setGeocodedDriveRoutes(newDriveRoutes);
+            
+            // Notify with both start and end coordinates
+            onCoordinatesGeocoded?.(stop.id, driveResult.startResult.coordinates, driveResult.endResult.coordinates);
           }
         } else {
           // Regular geocoding for non-drive events
@@ -121,12 +131,29 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
       map.current.on("load", () => {
         if (!map.current) return;
 
-        // Add route line
-        const coordinates = allStopsWithCoordinates
-          .filter(s => s.coordinates)
-          .map(s => s.coordinates as [number, number]);
+        // Build route coordinates using start/end points for drives
+        const routeCoordinates: [number, number][] = [];
+        
+        allStopsWithCoordinates.forEach((stop) => {
+          if (stop.type === 'drive') {
+            const driveRoute = geocodedDriveRoutes.get(stop.id);
+            if (driveRoute) {
+              routeCoordinates.push(driveRoute.start);
+              routeCoordinates.push(driveRoute.end);
+            } else if (stop.startCoordinates && stop.endCoordinates) {
+              routeCoordinates.push(stop.startCoordinates);
+              routeCoordinates.push(stop.endCoordinates);
+            } else if (stop.coordinates) {
+              routeCoordinates.push(stop.coordinates);
+            }
+          } else {
+            if (stop.coordinates) {
+              routeCoordinates.push(stop.coordinates);
+            }
+          }
+        });
 
-        if (coordinates.length > 1) {
+        if (routeCoordinates.length > 1) {
           map.current.addSource("route", {
             type: "geojson",
             data: {
@@ -134,7 +161,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
               properties: {},
               geometry: {
                 type: "LineString",
-                coordinates: coordinates
+                coordinates: routeCoordinates
               }
             }
           });
@@ -203,18 +230,31 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
             }
           });
 
+          let popupContent = '';
+          if (stop.type === 'drive') {
+            const startLoc = stop.startLocation || stop.location.split(' to ')[0];
+            const endLoc = stop.endLocation || stop.location.split(' to ')[1];
+            popupContent = `
+              <div style="padding: 8px;">
+                <h3 style="font-weight: 600; margin-bottom: 4px;">📍 ${startLoc} → ${endLoc}</h3>
+                <p style="font-size: 12px; color: #666; margin-bottom: 4px;">${stop.time}</p>
+                ${stop.drivingTime ? `<p style="font-size: 12px; color: #0891b2; margin-bottom: 4px;">🚗 ${stop.drivingTime}</p>` : ''}
+                ${stop.notes ? `<p style="font-size: 12px; color: #888;">${stop.notes}</p>` : ""}
+              </div>
+            `;
+          } else {
+            popupContent = `
+              <div style="padding: 8px;">
+                <h3 style="font-weight: 600; margin-bottom: 4px;">${stop.location}</h3>
+                <p style="font-size: 12px; color: #666; margin-bottom: 4px;">${stop.time}</p>
+                ${stop.notes ? `<p style="font-size: 12px; color: #888;">${stop.notes}</p>` : ""}
+              </div>
+            `;
+          }
+
           const marker = new mapboxgl.Marker(el)
             .setLngLat(stop.coordinates as [number, number])
-            .setPopup(
-              new mapboxgl.Popup({ offset: 25 })
-                .setHTML(`
-                  <div style="padding: 8px;">
-                    <h3 style="font-weight: 600; margin-bottom: 4px;">${stop.location}</h3>
-                    <p style="font-size: 12px; color: #666; margin-bottom: 4px;">${stop.time}</p>
-                    ${stop.notes ? `<p style="font-size: 12px; color: #888;">${stop.notes}</p>` : ""}
-                  </div>
-                `)
-            )
+            .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
             .addTo(map.current);
 
           markers.current[stop.id] = marker;
@@ -233,7 +273,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
       }
       markers.current = {};
     };
-  }, [mapboxToken, allStopsWithCoordinates.length, geocodedStops.size]);
+  }, [mapboxToken, allStopsWithCoordinates.length, geocodedStops.size, geocodedDriveRoutes.size]);
 
   // Highlight marker when stop is selected
   useEffect(() => {
