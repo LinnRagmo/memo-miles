@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { TripDay, Stop } from "@/types/trip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { X, Plus, Sunrise, Sunset } from "lucide-react";
+import { X, Plus, Sunrise, Sunset, Hotel } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import TimelineView from "./TimelineView";
 import MapView from "./MapView";
 import AddEventForm from "./AddEventForm";
@@ -21,6 +23,8 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
   const [highlightedStopId, setHighlightedStopId] = useState<string | undefined>();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingStopId, setEditingStopId] = useState<string | null>(null);
+  const [showQuickAccommodation, setShowQuickAccommodation] = useState(false);
+  const [accommodationName, setAccommodationName] = useState("");
 
   if (!day) return null;
 
@@ -44,6 +48,21 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
     setHighlightedStopId(stopId);
     // Auto-clear highlight after 2 seconds
     setTimeout(() => setHighlightedStopId(undefined), 2000);
+  };
+
+  const handleQuickAccommodationSubmit = () => {
+    if (!accommodationName.trim()) return;
+    
+    onAddEvent(day.id, {
+      time: "20:00",
+      location: accommodationName,
+      type: "accommodation",
+      notes: undefined,
+      coordinates: undefined,
+    });
+    
+    setAccommodationName("");
+    setShowQuickAccommodation(false);
   };
 
   return (
@@ -102,7 +121,83 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
                 </Button>
               )}
             </div>
-            <TimelineView 
+            
+            {/* Empty state with quick accommodation add */}
+            {day.stops.length === 0 && !showAddForm && !showQuickAccommodation && (
+              <div className="flex flex-col items-center justify-center py-12 px-6">
+                <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                  <Hotel className="w-10 h-10 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">No activities planned yet</h3>
+                <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
+                  Start by adding where you'll stay tonight
+                </p>
+                <Button
+                  variant="outline"
+                  className="gap-2 font-semibold"
+                  onClick={() => setShowQuickAccommodation(true)}
+                >
+                  <Hotel className="w-4 h-4" />
+                  Add Accommodation
+                </Button>
+              </div>
+            )}
+            
+            {/* Quick accommodation form */}
+            {showQuickAccommodation && (
+              <div className="bg-card border border-border rounded-lg p-6 mb-4 mx-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                    <Hotel className="w-5 h-5 text-secondary" />
+                  </div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Where will you stay?</h3>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="accommodation" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                      Accommodation Name
+                    </Label>
+                    <Input
+                      id="accommodation"
+                      type="text"
+                      value={accommodationName}
+                      onChange={(e) => setAccommodationName(e.target.value)}
+                      placeholder="e.g., Hotel California, Airbnb in downtown..."
+                      className="h-10"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleQuickAccommodationSubmit();
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleQuickAccommodationSubmit}
+                      disabled={!accommodationName.trim()}
+                      className="flex-1 h-9 font-bold uppercase text-xs tracking-wider"
+                    >
+                      <Hotel className="w-4 h-4 mr-1" />
+                      Add Accommodation
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowQuickAccommodation(false);
+                        setAccommodationName("");
+                      }}
+                      className="h-9 px-4 font-bold uppercase text-xs tracking-wider"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <TimelineView
               day={day} 
               onStopClick={handleStopClick}
               highlightedStopId={highlightedStopId}
