@@ -455,15 +455,27 @@ const Index = () => {
         if (day.id === dayId) {
           let newStops = [...day.stops];
           
-          // If insertAtIndex is specified, use it
-          if (insertAtIndex !== undefined) {
-            newStops.splice(insertAtIndex, 0, newStop);
+          // Separate accommodations from other stops
+          const accommodations = newStops.filter(s => s.type === 'accommodation');
+          const nonAccommodations = newStops.filter(s => s.type !== 'accommodation');
+          
+          // If new stop is accommodation, add it to accommodations
+          if (newStop.type === 'accommodation') {
+            accommodations.push(newStop);
           } else {
-            newStops.push(newStop);
+            // If insertAtIndex is specified for non-accommodation, use it
+            if (insertAtIndex !== undefined) {
+              nonAccommodations.splice(insertAtIndex, 0, newStop);
+            } else {
+              nonAccommodations.push(newStop);
+            }
           }
           
-          // Sort stops by time
-          newStops = sortStopsByTime(newStops);
+          // Sort non-accommodations by time
+          const sortedNonAccommodations = sortStopsByTime(nonAccommodations);
+          
+          // Combine: non-accommodations first, then accommodations
+          newStops = [...sortedNonAccommodations, ...accommodations];
           
           return { ...day, stops: newStops };
         }
@@ -490,10 +502,15 @@ const Index = () => {
 
     // Handle reordering case
     if (updatedStop && 'stops' in updatedStop && Array.isArray(updatedStop.stops)) {
+      // Separate accommodations and non-accommodations, keep accommodations at the end
+      const accommodations = updatedStop.stops.filter((s: Stop) => s.type === 'accommodation');
+      const nonAccommodations = updatedStop.stops.filter((s: Stop) => s.type !== 'accommodation');
+      const reorderedStops = [...nonAccommodations, ...accommodations];
+      
       const updatedTrip = {
         ...trip,
         days: trip.days.map(day =>
-          day.id === dayId ? { ...day, stops: updatedStop.stops } : day
+          day.id === dayId ? { ...day, stops: reorderedStops } : day
         )
       };
       setTrip(updatedTrip);
@@ -501,7 +518,7 @@ const Index = () => {
 
       // Update selectedDay
       setSelectedDay(prev => 
-        prev && prev.id === dayId ? { ...prev, stops: updatedStop.stops } : prev
+        prev && prev.id === dayId ? { ...prev, stops: reorderedStops } : prev
       );
 
       toast.success("Activities reordered!");
@@ -515,11 +532,15 @@ const Index = () => {
         day.id === dayId
           ? { 
               ...day, 
-              stops: sortStopsByTime(
-                day.stops.map(stop => 
+              stops: (() => {
+                const newStops = day.stops.map(stop => 
                   stop.id === stopId ? { ...updatedStop, id: stopId } : stop
-                )
-              )
+                );
+                // Separate and sort: non-accommodations first (sorted by time), then accommodations
+                const accommodations = newStops.filter(s => s.type === 'accommodation');
+                const nonAccommodations = newStops.filter(s => s.type !== 'accommodation');
+                return [...sortStopsByTime(nonAccommodations), ...accommodations];
+              })()
             }
           : day
       )
@@ -532,11 +553,14 @@ const Index = () => {
       prev && prev.id === dayId
         ? { 
             ...prev, 
-            stops: sortStopsByTime(
-              prev.stops.map(stop => 
+            stops: (() => {
+              const newStops = prev.stops.map(stop => 
                 stop.id === stopId ? { ...updatedStop, id: stopId } : stop
-              )
-            )
+              );
+              const accommodations = newStops.filter(s => s.type === 'accommodation');
+              const nonAccommodations = newStops.filter(s => s.type !== 'accommodation');
+              return [...sortStopsByTime(nonAccommodations), ...accommodations];
+            })()
           }
         : prev
     );

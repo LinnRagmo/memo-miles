@@ -54,7 +54,7 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
     if (!accommodationName.trim()) return;
     
     onAddEvent(day.id, {
-      time: "20:00",
+      time: "",
       location: accommodationName,
       type: "accommodation",
       notes: undefined,
