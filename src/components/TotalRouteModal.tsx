@@ -113,27 +113,33 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
 
   // Fetch actual route geometries between consecutive stops
   useEffect(() => {
-    if (!isOpen || !mapboxToken || isFetchingRoutes || geocodedStops.size === 0) return;
+    if (!isOpen || !mapboxToken || isFetchingRoutes) return;
+
+    // Get all stops in order with coordinates
+    const orderedStops = trip.days.flatMap(day => 
+      day.stops
+        .map(stop => {
+          const driveRoute = geocodedDriveRoutes.get(stop.id);
+          return {
+            ...stop,
+            coordinates: stop.coordinates || geocodedStops.get(stop.id) || driveRoute?.start,
+            startCoordinates: driveRoute?.start,
+            endCoordinates: driveRoute?.end,
+            location: stop.location,
+          };
+        })
+        .filter(stop => stop.coordinates)
+    );
+
+    if (orderedStops.length < 2) {
+      console.log('Not enough stops to fetch routes');
+      return;
+    }
 
     const fetchRouteGeometries = async () => {
+      console.log('Starting route geometry fetch for', orderedStops.length, 'stops');
       setIsFetchingRoutes(true);
       
-      // Get all stops in order with coordinates
-      const orderedStops = trip.days.flatMap(day => 
-        day.stops
-          .map(stop => {
-            const driveRoute = geocodedDriveRoutes.get(stop.id);
-            return {
-              ...stop,
-              coordinates: stop.coordinates || geocodedStops.get(stop.id) || driveRoute?.start,
-              startCoordinates: driveRoute?.start,
-              endCoordinates: driveRoute?.end,
-              location: stop.location,
-            };
-          })
-          .filter(stop => stop.coordinates)
-      );
-
       const geometries: any[] = [];
 
       // Fetch route geometry for each consecutive pair of stops
@@ -145,6 +151,8 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
         const startCoords = currentStop.endCoordinates || currentStop.coordinates!;
         const endCoords = nextStop.startCoordinates || nextStop.coordinates!;
         
+        console.log(`Fetching route ${i + 1}/${orderedStops.length - 1}: ${currentStop.location} to ${nextStop.location}`);
+        
         const geometry = await getRouteGeometry(
           startCoords,
           endCoords,
@@ -153,13 +161,17 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
         );
         
         if (geometry) {
+          console.log('Got geometry with', geometry.coordinates?.length, 'points');
           geometries.push(geometry);
+        } else {
+          console.log('No geometry returned for this segment');
         }
         
         // Small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 200));
       }
 
+      console.log('Finished fetching', geometries.length, 'route geometries');
       setRouteGeometries(geometries);
       setIsFetchingRoutes(false);
     };
@@ -390,38 +402,40 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[98vw] w-[98vw] h-[98vh] p-0 gap-0">
-        <DialogHeader className="px-4 py-2 border-b border-border bg-card flex flex-row items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-              <span className="truncate">{trip.title} - Full Route</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {trip.startDate} - {trip.endDate} • {allStops.length} stops
-            </DialogDescription>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {mapboxToken && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => {
-                  setMapboxToken("");
-                  setTokenError(false);
-                  localStorage.removeItem("mapboxToken");
-                }}
+      <DialogContent className="max-w-[98vw] w-[98vw] h-[98vh] p-0 gap-0 flex flex-col">
+        <DialogHeader className="px-4 py-2 border-b border-border bg-card flex-shrink-0">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                <span className="truncate">{trip.title} - Full Route</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                {trip.startDate} - {trip.endDate} • {allStops.length} stops
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {mapboxToken && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => {
+                    setMapboxToken("");
+                    setTokenError(false);
+                    localStorage.removeItem("mapboxToken");
+                  }}
+                >
+                  Change Token
+                </Button>
+              )}
+              <button
+                onClick={onClose}
+                className="rounded-lg p-1.5 hover:bg-muted transition-colors"
               >
-                Change Token
-              </Button>
-            )}
-            <button
-              onClick={onClose}
-              className="rounded-lg p-1.5 hover:bg-muted transition-colors"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
           </div>
         </DialogHeader>
 
