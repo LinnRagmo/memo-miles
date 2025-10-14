@@ -383,6 +383,63 @@ const Index = () => {
     }
   };
 
+  // Sort stops by time while keeping stops without time in their original positions
+  const sortStopsByTime = (stops: Stop[]): Stop[] => {
+    const parseTime = (timeStr: string): number => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    // Separate stops with and without times
+    const stopsWithTime = stops.filter(stop => stop.time).map((stop, originalIndex) => ({
+      stop,
+      originalIndex: stops.indexOf(stop)
+    }));
+    
+    const stopsWithoutTime = stops.filter(stop => !stop.time).map((stop, originalIndex) => ({
+      stop,
+      originalIndex: stops.indexOf(stop)
+    }));
+
+    // Sort stops with time chronologically
+    stopsWithTime.sort((a, b) => parseTime(a.stop.time!) - parseTime(b.stop.time!));
+
+    // Merge back: place timed stops in order, keep untimed stops at their positions
+    const result: Stop[] = [];
+    let timedIndex = 0;
+    let untimedIndex = 0;
+
+    for (let i = 0; i < stops.length; i++) {
+      const originalStop = stops[i];
+      
+      if (originalStop.time) {
+        // Place next timed stop
+        if (timedIndex < stopsWithTime.length) {
+          result.push(stopsWithTime[timedIndex].stop);
+          timedIndex++;
+        }
+      } else {
+        // Try to keep untimed stop at similar position
+        if (untimedIndex < stopsWithoutTime.length) {
+          result.push(stopsWithoutTime[untimedIndex].stop);
+          untimedIndex++;
+        }
+      }
+    }
+
+    // Add any remaining stops
+    while (timedIndex < stopsWithTime.length) {
+      result.push(stopsWithTime[timedIndex].stop);
+      timedIndex++;
+    }
+    while (untimedIndex < stopsWithoutTime.length) {
+      result.push(stopsWithoutTime[untimedIndex].stop);
+      untimedIndex++;
+    }
+
+    return result;
+  };
+
 
   const handleAddEvent = (dayId: string, event: Omit<Stop, "id">, insertAtIndex?: number) => {
     if (!trip) return;
@@ -396,40 +453,17 @@ const Index = () => {
       ...trip,
       days: trip.days.map(day => {
         if (day.id === dayId) {
-          const newStops = [...day.stops];
+          let newStops = [...day.stops];
           
           // If insertAtIndex is specified, use it
           if (insertAtIndex !== undefined) {
             newStops.splice(insertAtIndex, 0, newStop);
-          } else if (newStop.time) {
-            // Find the correct position based on time
-            const parseTime = (timeStr: string): number => {
-              const [hours, minutes] = timeStr.split(':').map(Number);
-              return hours * 60 + minutes;
-            };
-            
-            const newTime = parseTime(newStop.time);
-            let insertPosition = newStops.length; // Default to end
-            
-            for (let i = 0; i < newStops.length; i++) {
-              if (newStops[i].time) {
-                const existingTime = parseTime(newStops[i].time);
-                if (newTime < existingTime) {
-                  insertPosition = i;
-                  break;
-                }
-              } else {
-                // If we encounter a stop without time, insert before it
-                insertPosition = i;
-                break;
-              }
-            }
-            
-            newStops.splice(insertPosition, 0, newStop);
           } else {
-            // No time set, add at the end
             newStops.push(newStop);
           }
+          
+          // Sort stops by time
+          newStops = sortStopsByTime(newStops);
           
           return { ...day, stops: newStops };
         }
@@ -481,8 +515,10 @@ const Index = () => {
         day.id === dayId
           ? { 
               ...day, 
-              stops: day.stops.map(stop => 
-                stop.id === stopId ? { ...updatedStop, id: stopId } : stop
+              stops: sortStopsByTime(
+                day.stops.map(stop => 
+                  stop.id === stopId ? { ...updatedStop, id: stopId } : stop
+                )
               )
             }
           : day
@@ -496,8 +532,10 @@ const Index = () => {
       prev && prev.id === dayId
         ? { 
             ...prev, 
-            stops: prev.stops.map(stop => 
-              stop.id === stopId ? { ...updatedStop, id: stopId } : stop
+            stops: sortStopsByTime(
+              prev.stops.map(stop => 
+                stop.id === stopId ? { ...updatedStop, id: stopId } : stop
+              )
             )
           }
         : prev
