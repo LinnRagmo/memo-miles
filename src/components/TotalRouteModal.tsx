@@ -7,7 +7,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { geocodeMultipleLocations, geocodeDriveRoute } from "@/lib/geocoding";
+import { geocodeMultipleLocations, geocodeDriveRoute, getRouteGeometry } from "@/lib/geocoding";
 
 interface TotalRouteModalProps {
   trip: Trip;
@@ -29,6 +29,8 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
   const [geocodedDriveRoutes, setGeocodedDriveRoutes] = useState<Map<string, { start: [number, number], end: [number, number] }>>(new Map());
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [tokenError, setTokenError] = useState(false);
+  const [routeGeometries, setRouteGeometries] = useState<any[]>([]);
+  const [isFetchingRoutes, setIsFetchingRoutes] = useState(false);
   const { toast } = useToast();
 
   const handleTokenSubmit = () => {
@@ -109,6 +111,62 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
     geocodeStops();
   }, [isOpen, mapboxToken, trip.days.length]);
 
+  // Fetch actual route geometries between consecutive stops
+  useEffect(() => {
+    if (!isOpen || !mapboxToken || isFetchingRoutes || geocodedStops.size === 0) return;
+
+    const fetchRouteGeometries = async () => {
+      setIsFetchingRoutes(true);
+      
+      // Get all stops in order with coordinates
+      const orderedStops = trip.days.flatMap(day => 
+        day.stops
+          .map(stop => {
+            const driveRoute = geocodedDriveRoutes.get(stop.id);
+            return {
+              ...stop,
+              coordinates: stop.coordinates || geocodedStops.get(stop.id) || driveRoute?.start,
+              startCoordinates: driveRoute?.start,
+              endCoordinates: driveRoute?.end,
+              location: stop.location,
+            };
+          })
+          .filter(stop => stop.coordinates)
+      );
+
+      const geometries: any[] = [];
+
+      // Fetch route geometry for each consecutive pair of stops
+      for (let i = 0; i < orderedStops.length - 1; i++) {
+        const currentStop = orderedStops[i];
+        const nextStop = orderedStops[i + 1];
+        
+        // Use end coordinates for drive stops, otherwise use regular coordinates
+        const startCoords = currentStop.endCoordinates || currentStop.coordinates!;
+        const endCoords = nextStop.startCoordinates || nextStop.coordinates!;
+        
+        const geometry = await getRouteGeometry(
+          startCoords,
+          endCoords,
+          currentStop.location,
+          nextStop.location
+        );
+        
+        if (geometry) {
+          geometries.push(geometry);
+        }
+        
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      setRouteGeometries(geometries);
+      setIsFetchingRoutes(false);
+    };
+
+    fetchRouteGeometries();
+  }, [isOpen, mapboxToken, geocodedStops.size, geocodedDriveRoutes.size]);
+
   useEffect(() => {
     console.log('TotalRouteModal useEffect triggered:', { isOpen, hasToken: !!mapboxToken });
     
@@ -185,20 +243,30 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
         if (!map.current) return;
         setIsMapLoading(false);
 
-        // Create route coordinates array
-        const coordinates: [number, number][] = [];
-        allStops.forEach(stop => {
-          const driveRoute = geocodedDriveRoutes.get(stop.id);
-          if (driveRoute) {
-            // For drive events, add both start and end
-            coordinates.push(driveRoute.start);
-            coordinates.push(driveRoute.end);
-          } else if (stop.coordinates) {
-            // For regular stops, add single coordinate
-            coordinates.push(stop.coordinates);
-          }
-        });
-        console.log('Route coordinates:', coordinates);
+        // Build route using actual geometries if available
+        let routeCoordinates: [number, number][] = [];
+        
+        if (routeGeometries.length > 0) {
+          // Use actual route geometries from Mapbox Directions API
+          routeGeometries.forEach(geometry => {
+            if (geometry && geometry.coordinates) {
+              routeCoordinates.push(...geometry.coordinates);
+            }
+          });
+          console.log('Using actual route geometries:', routeCoordinates.length, 'points');
+        } else {
+          // Fallback to straight lines between stops
+          allStops.forEach(stop => {
+            const driveRoute = geocodedDriveRoutes.get(stop.id);
+            if (driveRoute) {
+              routeCoordinates.push(driveRoute.start);
+              routeCoordinates.push(driveRoute.end);
+            } else if (stop.coordinates) {
+              routeCoordinates.push(stop.coordinates);
+            }
+          });
+          console.log('Using fallback coordinates:', routeCoordinates.length, 'points');
+        }
 
         // Add route line
         map.current.addSource("route", {
@@ -208,7 +276,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
             properties: {},
             geometry: {
               type: "LineString",
-              coordinates: coordinates,
+              coordinates: routeCoordinates,
             },
           },
         });
@@ -219,7 +287,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
           .trim();
         
         console.log('Primary color:', primaryColor);
-        const lineColor = primaryColor ? `hsl(${primaryColor})` : '#3b82f6';
+        const lineColor = primaryColor ? `hsl(${primaryColor})` : '#FF6B35';
         console.log('Using line color:', lineColor);
         
         map.current.addLayer({
@@ -232,8 +300,8 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
           },
           paint: {
             "line-color": lineColor,
-            "line-width": 5,
-            "line-opacity": 0.9,
+            "line-width": 6,
+            "line-opacity": 0.95,
           },
         });
         console.log('Route layer added successfully');
@@ -306,7 +374,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
       map.current = null;
       setIsMapLoading(false);
     };
-  }, [isOpen, trip, mapboxToken, geocodedStops.size, geocodedDriveRoutes.size]);
+  }, [isOpen, trip, mapboxToken, geocodedStops.size, geocodedDriveRoutes.size, routeGeometries.length]);
 
   const allStops = trip.days.flatMap(day => 
     day.stops
@@ -396,12 +464,14 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
           ) : (
             <>
               <div ref={mapContainer} className="absolute inset-0" />
-              {(isGeocoding || isMapLoading) && (
+              {(isGeocoding || isMapLoading || isFetchingRoutes) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
                     {isGeocoding ? (
                       <p className="text-sm text-muted-foreground">Geocoding locations...</p>
+                    ) : isFetchingRoutes ? (
+                      <p className="text-sm text-muted-foreground">Calculating routes...</p>
                     ) : (
                       <p className="text-sm text-muted-foreground">Loading map...</p>
                     )}

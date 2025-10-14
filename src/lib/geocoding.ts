@@ -122,3 +122,32 @@ export async function geocodeMultipleLocations(
 
   return results;
 }
+
+export async function getRouteGeometry(
+  startCoords: [number, number],
+  endCoords: [number, number],
+  startLocation: string,
+  endLocation: string
+): Promise<any | null> {
+  try {
+    const { data, error } = await (await import("@/integrations/supabase/client")).supabase.functions.invoke(
+      "calculate-route",
+      {
+        body: {
+          startLocation,
+          endLocation,
+        },
+      }
+    );
+
+    if (error) {
+      console.error("Error fetching route geometry:", error);
+      return null;
+    }
+
+    return data?.geometry || null;
+  } catch (error) {
+    console.error("Failed to fetch route geometry:", error);
+    return null;
+  }
+}

@@ -87,6 +87,7 @@ serve(async (req) => {
         distance: `${distanceKm} km (${distanceMiles} mi)`,
         startCoordinates: startCoords,
         endCoordinates: endCoords,
+        geometry: route.geometry, // Include the actual route geometry
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
