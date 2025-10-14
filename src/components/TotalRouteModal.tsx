@@ -7,13 +7,13 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { geocodeMultipleLocations } from "@/lib/geocoding";
+import { geocodeMultipleLocations, geocodeDriveRoute } from "@/lib/geocoding";
 
 interface TotalRouteModalProps {
   trip: Trip;
   isOpen: boolean;
   onClose: () => void;
-  onCoordinatesGeocoded?: (dayId: string, stopId: string, coordinates: [number, number]) => void;
+  onCoordinatesGeocoded?: (dayId: string, stopId: string, coordinates: [number, number], endCoordinates?: [number, number]) => void;
 }
 
 const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: TotalRouteModalProps) => {
@@ -27,6 +27,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
   const [isMapLoading, setIsMapLoading] = useState(true);
   const [containerReady, setContainerReady] = useState(false);
   const [geocodedStops, setGeocodedStops] = useState<Map<string, [number, number]>>(new Map());
+  const [geocodedDriveRoutes, setGeocodedDriveRoutes] = useState<Map<string, { start: [number, number], end: [number, number] }>>(new Map());
   const [isGeocoding, setIsGeocoding] = useState(false);
   const { toast } = useToast();
 
@@ -61,30 +62,57 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
   useEffect(() => {
     if (!isOpen || !mapboxToken || isGeocoding) return;
 
-    const stopsNeedingGeocode = trip.days.flatMap(day =>
+    // Split stops into drive and regular stops
+    const allStopsNeedingGeocode = trip.days.flatMap(day =>
       day.stops
-        .filter(stop => !stop.coordinates && !geocodedStops.has(stop.id) && stop.location)
+        .filter(stop => !stop.coordinates && stop.location)
         .map(stop => ({ ...stop, dayId: day.id }))
     );
 
-    if (stopsNeedingGeocode.length === 0) return;
+    const driveStops = allStopsNeedingGeocode.filter(stop => 
+      stop.type === 'drive' && stop.location.includes(' to ') && !geocodedDriveRoutes.has(stop.id)
+    );
+    
+    const regularStops = allStopsNeedingGeocode.filter(stop => 
+      stop.type !== 'drive' && !geocodedStops.has(stop.id)
+    );
+
+    if (driveStops.length === 0 && regularStops.length === 0) return;
 
     const geocodeStops = async () => {
       setIsGeocoding(true);
 
-      const locationsToGeocode = stopsNeedingGeocode.map(stop => stop.location);
-      const results = await geocodeMultipleLocations(locationsToGeocode, mapboxToken);
-
-      const newGeocodedStops = new Map(geocodedStops);
-      stopsNeedingGeocode.forEach(stop => {
-        const result = results.get(stop.location);
-        if (result) {
-          newGeocodedStops.set(stop.id, result.coordinates);
-          onCoordinatesGeocoded?.(stop.dayId, stop.id, result.coordinates);
+      // Geocode drive routes
+      const newGeocodedDriveRoutes = new Map(geocodedDriveRoutes);
+      for (const stop of driveStops) {
+        const result = await geocodeDriveRoute(stop.location, mapboxToken);
+        if (result && result.startResult && result.endResult) {
+          const driveRoute = {
+            start: result.startResult.coordinates,
+            end: result.endResult.coordinates
+          };
+          newGeocodedDriveRoutes.set(stop.id, driveRoute);
+          onCoordinatesGeocoded?.(stop.dayId, stop.id, driveRoute.start, driveRoute.end);
         }
-      });
+      }
+      setGeocodedDriveRoutes(newGeocodedDriveRoutes);
 
-      setGeocodedStops(newGeocodedStops);
+      // Geocode regular stops
+      if (regularStops.length > 0) {
+        const locationsToGeocode = regularStops.map(stop => stop.location);
+        const results = await geocodeMultipleLocations(locationsToGeocode, mapboxToken);
+
+        const newGeocodedStops = new Map(geocodedStops);
+        regularStops.forEach(stop => {
+          const result = results.get(stop.location);
+          if (result) {
+            newGeocodedStops.set(stop.id, result.coordinates);
+            onCoordinatesGeocoded?.(stop.dayId, stop.id, result.coordinates);
+          }
+        });
+        setGeocodedStops(newGeocodedStops);
+      }
+
       setIsGeocoding(false);
     };
 
@@ -103,11 +131,16 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
     // Get all stops with coordinates from all days (including geocoded)
     const allStops = trip.days.flatMap(day => 
       day.stops
-        .map(stop => ({
-          ...stop,
-          coordinates: stop.coordinates || geocodedStops.get(stop.id),
-          date: day.date
-        }))
+        .map(stop => {
+          const driveRoute = geocodedDriveRoutes.get(stop.id);
+          return {
+            ...stop,
+            coordinates: stop.coordinates || geocodedStops.get(stop.id) || driveRoute?.start,
+            startCoordinates: driveRoute?.start,
+            endCoordinates: driveRoute?.end,
+            date: day.date
+          };
+        })
         .filter(stop => stop.coordinates)
     );
 
@@ -149,7 +182,18 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
       setIsMapLoading(false);
 
       // Create route coordinates array
-      const coordinates = allStops.map(stop => stop.coordinates!);
+      const coordinates: [number, number][] = [];
+      allStops.forEach(stop => {
+        const driveRoute = geocodedDriveRoutes.get(stop.id);
+        if (driveRoute) {
+          // For drive events, add both start and end
+          coordinates.push(driveRoute.start);
+          coordinates.push(driveRoute.end);
+        } else if (stop.coordinates) {
+          // For regular stops, add single coordinate
+          coordinates.push(stop.coordinates);
+        }
+      });
       console.log('Route coordinates:', coordinates);
 
       // Add route line
@@ -192,6 +236,9 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
 
       // Add markers for each stop
       allStops.forEach((stop, index) => {
+        const driveRoute = geocodedDriveRoutes.get(stop.id);
+        const markerCoordinates = driveRoute ? driveRoute.start : stop.coordinates!;
+        
         const el = document.createElement("div");
         el.className = "custom-marker";
         el.style.width = "32px";
@@ -208,26 +255,40 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
         el.style.fontSize = "12px";
         el.textContent = (index + 1).toString();
 
+        const popupContent = driveRoute 
+          ? `<div style="padding: 8px;">
+              <h3 style="font-weight: bold; margin-bottom: 4px;">📍 ${stop.location}</h3>
+              <p style="font-size: 12px; color: #666; margin-bottom: 4px;">${stop.date}</p>
+              <p style="font-size: 12px; color: #666;">${stop.time}</p>
+              ${stop.drivingTime ? `<p style="font-size: 12px; margin-top: 4px;">⏱️ ${stop.drivingTime}</p>` : ""}
+              ${stop.notes ? `<p style="font-size: 12px; margin-top: 4px;">${stop.notes}</p>` : ""}
+            </div>`
+          : `<div style="padding: 8px;">
+              <h3 style="font-weight: bold; margin-bottom: 4px;">${stop.location}</h3>
+              <p style="font-size: 12px; color: #666; margin-bottom: 4px;">${stop.date}</p>
+              <p style="font-size: 12px; color: #666;">${stop.time}</p>
+              ${stop.notes ? `<p style="font-size: 12px; margin-top: 4px;">${stop.notes}</p>` : ""}
+            </div>`;
+
         const marker = new mapboxgl.Marker(el)
-          .setLngLat(stop.coordinates!)
-          .setPopup(
-            new mapboxgl.Popup({ offset: 25 }).setHTML(
-              `<div style="padding: 8px;">
-                <h3 style="font-weight: bold; margin-bottom: 4px;">${stop.location}</h3>
-                <p style="font-size: 12px; color: #666; margin-bottom: 4px;">${stop.date}</p>
-                <p style="font-size: 12px; color: #666;">${stop.time}</p>
-                ${stop.notes ? `<p style="font-size: 12px; margin-top: 4px;">${stop.notes}</p>` : ""}
-              </div>`
-            )
-          )
+          .setLngLat(markerCoordinates)
+          .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
           .addTo(map.current!);
 
         markers.current.push(marker);
       });
 
-      // Fit map to show all stops
+      // Fit map to show all stops (including both start and end of drives)
       const bounds = new mapboxgl.LngLatBounds();
-      coordinates.forEach(coord => bounds.extend(coord));
+      allStops.forEach(stop => {
+        const driveRoute = geocodedDriveRoutes.get(stop.id);
+        if (driveRoute) {
+          bounds.extend(driveRoute.start);
+          bounds.extend(driveRoute.end);
+        } else if (stop.coordinates) {
+          bounds.extend(stop.coordinates);
+        }
+      });
       map.current.fitBounds(bounds, { padding: 50 });
     });
 
@@ -239,14 +300,17 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
       map.current = null;
       setIsMapLoading(false);
     };
-  }, [isOpen, containerReady, trip, mapboxToken, geocodedStops.size]);
+  }, [isOpen, containerReady, trip, mapboxToken, geocodedStops.size, geocodedDriveRoutes.size]);
 
   const allStops = trip.days.flatMap(day => 
     day.stops
-      .map(stop => ({
-        ...stop,
-        coordinates: stop.coordinates || geocodedStops.get(stop.id)
-      }))
+      .map(stop => {
+        const driveRoute = geocodedDriveRoutes.get(stop.id);
+        return {
+          ...stop,
+          coordinates: stop.coordinates || geocodedStops.get(stop.id) || driveRoute?.start
+        };
+      })
       .filter(stop => stop.coordinates)
   );
 
