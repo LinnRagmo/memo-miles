@@ -1,7 +1,17 @@
 import { TripDay, Stop } from "@/types/trip";
-import { Car, MapPin, Coffee, Camera, Pencil, Trash2, Plus, Hotel, Mountain, Utensils, Eye } from "lucide-react";
+import { Car, MapPin, Coffee, Camera, Pencil, Trash2, Plus, Hotel, Mountain, Utensils, Eye, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import EditEventForm from "./EditEventForm";
 import AddEventForm from "./AddEventForm";
@@ -53,6 +63,7 @@ interface SortableStopProps {
 
 const SortableStop = ({ stop, index, isLast, isHighlighted, isEditing, onStopClick, onEditStop, onSaveEdit, onCancelEdit, onDeleteStop, onAddEvent }: SortableStopProps) => {
   const [showAddAfterPopover, setShowAddAfterPopover] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const {
     attributes,
     listeners,
@@ -209,17 +220,47 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, isEditing, onStopCli
                     </Popover>
                   )}
                   {onDeleteStop && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteStop(stop.id);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeleteDialog(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+
+                      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                        <AlertDialogContent className="max-w-md">
+                          <AlertDialogHeader>
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                                <AlertTriangle className="w-6 h-6 text-destructive" />
+                              </div>
+                              <AlertDialogTitle className="text-xl">Delete Activity?</AlertDialogTitle>
+                            </div>
+                            <AlertDialogDescription className="text-base leading-relaxed">
+                              Are you sure you want to delete <span className="font-semibold text-foreground">"{stop.location}"</span>? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="gap-2 sm:gap-2">
+                            <AlertDialogCancel className="m-0">Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => {
+                                onDeleteStop(stop.id);
+                                setShowDeleteDialog(false);
+                              }}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Activity
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
                   )}
                 </div>
               </div>

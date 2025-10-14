@@ -35,9 +35,7 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
   };
 
   const handleDeleteEvent = (stopId: string) => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
-      onDeleteEvent(day.id, stopId);
-    }
+    onDeleteEvent(day.id, stopId);
   };
 
   const editingStop = editingStopId ? day.stops.find(s => s.id === editingStopId) : null;
