@@ -130,11 +130,13 @@ const JournalPage = () => {
       };
     }
 
-    const dayData = fullTripData.days?.find((day: any) => {
-      const dayDate = new Date(day.date).toDateString();
-      const selected = selectedDate.toDateString();
-      return dayDate === selected;
-    });
+    const dayData = fullTripData.days && Array.isArray(fullTripData.days) 
+      ? fullTripData.days.find((day: any) => {
+          const dayDate = new Date(day.date).toDateString();
+          const selected = selectedDate.toDateString();
+          return dayDate === selected;
+        })
+      : undefined;
 
     if (!dayData || !dayData.stops || dayData.stops.length === 0) {
       return {
