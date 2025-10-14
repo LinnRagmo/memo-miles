@@ -8,7 +8,7 @@ import { PlanSidebar } from "@/components/PlanSidebar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, Map, Heart } from "lucide-react";
+import { Calendar as CalendarIcon, Map, Heart, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { fetchSunriseSunset, parseDate } from "@/lib/sunriseSunset";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ import { format, eachDayOfInterval, parseISO, differenceInDays, addDays } from "
 import { cn } from "@/lib/utils";
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   KeyboardSensor,
   useSensor,
@@ -35,6 +36,7 @@ const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTotalRouteOpen, setIsTotalRouteOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
+  const [activeDragItem, setActiveDragItem] = useState<{ location: string; description: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -573,9 +575,21 @@ const Index = () => {
   return (
     <DndContext
       sensors={sensors}
+      onDragStart={(event) => {
+        const { active } = event;
+        
+        if (active.data.current?.type === 'favorite') {
+          setActiveDragItem({
+            location: active.data.current.location,
+            description: active.data.current.notes,
+          });
+        }
+      }}
       onDragEnd={(event) => {
         const { active, over } = event;
         
+        setActiveDragItem(null);
+
         if (!over || !active.data.current) return;
 
         // Handle dragging from favorites
@@ -698,6 +712,18 @@ const Index = () => {
           />
         </div>
       </div>
+
+      <DragOverlay>
+        {activeDragItem ? (
+          <div className="bg-card rounded-md p-3 border-2 border-primary shadow-lg w-[280px]">
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">{activeDragItem.location}</span>
+            </div>
+            <p className="text-xs text-muted-foreground line-clamp-2">{activeDragItem.description}</p>
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 };
