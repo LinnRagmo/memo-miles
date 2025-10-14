@@ -95,17 +95,7 @@ const JournalPage = () => {
     }
   }, [tripId]);
 
-  // Auto-open first unfilled day template
-  useEffect(() => {
-    if (!tripInfo || !fullTripData || entries.length > 0 || isCreating) return;
-
-    const firstUnfilledDay = findFirstUnfilledDay();
-    if (firstUnfilledDay) {
-      const template = generateScrapbookTemplate(new Date(firstUnfilledDay));
-      setCurrentTemplate(template);
-      setIsCreating(true);
-    }
-  }, [tripInfo, fullTripData, entries, isCreating]);
+  // Removed auto-open behavior - users now land on journal entries view
 
   const findFirstUnfilledDay = () => {
     if (!tripInfo) return null;
