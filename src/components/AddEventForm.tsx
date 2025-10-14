@@ -36,6 +36,8 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [notes, setNotes] = useState("");
   const [calculating, setCalculating] = useState(false);
   const [favoritePopoverOpen, setFavoritePopoverOpen] = useState(false);
+  const [drivingTime, setDrivingTime] = useState("");
+  const [distance, setDistance] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +79,8 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
             drivingTime: data.drivingTime,
             distance: data.distance,
           };
+          setDrivingTime(data.drivingTime);
+          setDistance(data.distance);
         }
       } catch (error: any) {
         console.error("Error calculating route:", error);
@@ -104,6 +108,8 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     setType("activity");
     setActivityIcon("hiking");
     setNotes("");
+    setDrivingTime("");
+    setDistance("");
   };
 
   return (
@@ -212,6 +218,18 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
               className="h-9"
             />
           </div>
+          {drivingTime && (
+            <div className="p-3 bg-muted/50 rounded-md border border-border">
+              <p className="text-sm text-foreground">
+                <span className="font-semibold">Driving Time:</span> {drivingTime}
+              </p>
+              {distance && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Distance: {distance}
+                </p>
+              )}
+            </div>
+          )}
         </>
       ) : (
         <div className="mb-3">
