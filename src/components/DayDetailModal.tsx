@@ -3,7 +3,6 @@ import { TripDay, Stop } from "@/types/trip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X, Plus, Sunrise, Sunset } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import TimelineView from "./TimelineView";
 import MapView from "./MapView";
 import AddEventForm from "./AddEventForm";
@@ -20,14 +19,14 @@ interface DayDetailModalProps {
 
 const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDeleteEvent }: DayDetailModalProps) => {
   const [highlightedStopId, setHighlightedStopId] = useState<string | undefined>();
-  const [showAddFormPopover, setShowAddFormPopover] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [editingStopId, setEditingStopId] = useState<string | null>(null);
 
   if (!day) return null;
 
   const handleAddEvent = (event: Omit<Stop, "id">, insertAtIndex?: number) => {
     onAddEvent(day.id, event, insertAtIndex);
-    setShowAddFormPopover(false);
+    setShowAddForm(false);
   };
 
   const handleEditEvent = (stopId: string, updatedStop: Omit<Stop, "id">) => {
@@ -89,23 +88,21 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
           {/* Left Panel - Timeline */}
           <div className="w-1/2 border-r border-border overflow-y-auto bg-background">
             <div className="p-4">
-              <Popover open={showAddFormPopover} onOpenChange={setShowAddFormPopover}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full mb-4 h-10 font-bold uppercase text-xs tracking-wider"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Event
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-96 p-0" align="start" side="bottom" sideOffset={8} avoidCollisions>
-                  <AddEventForm
-                    onAddEvent={handleAddEvent}
-                    onCancel={() => setShowAddFormPopover(false)}
-                  />
-                </PopoverContent>
-              </Popover>
+              {showAddForm ? (
+                <AddEventForm
+                  onAddEvent={handleAddEvent}
+                  onCancel={() => setShowAddForm(false)}
+                />
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full mb-4 h-10 font-bold uppercase text-xs tracking-wider"
+                  onClick={() => setShowAddForm(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Event
+                </Button>
+              )}
             </div>
             <TimelineView 
               day={day} 
