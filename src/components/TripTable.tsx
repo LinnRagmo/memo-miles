@@ -26,6 +26,13 @@ import {
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useState } from "react";
 
 interface TripTableProps {
@@ -58,15 +65,23 @@ interface DraggableStopProps {
 }
 
 const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: `${dayId}-${stop.id}`,
-    data: { stop, dayId },
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: stop.id,
+    data: { stop, dayId }
   });
 
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
     opacity: isDragging ? 0.5 : 1,
-  } : undefined;
+  };
 
   return (
     <div
@@ -172,9 +187,11 @@ const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }
 
         {/* Events List */}
         <div className="p-4 space-y-3 min-h-[200px]">
-          {day.stops.map((stop) => (
-            <DraggableStop key={stop.id} stop={stop} dayId={day.id} day={day} />
-          ))}
+          <SortableContext items={day.stops.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            {day.stops.map((stop) => (
+              <DraggableStop key={stop.id} stop={stop} dayId={day.id} day={day} />
+            ))}
+          </SortableContext>
           {day.stops.length === 0 && (
             <div className="text-center py-8 text-muted-foreground text-sm">
               Drop activities here
@@ -255,9 +272,22 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
     }
 
     const fromDayId = active.data.current.dayId;
-    const toDayId = over.id as string;
     const stopId = active.data.current.stop.id;
     const movingStop = active.data.current.stop as Stop;
+
+    // Determine the target day ID
+    // If over.id is a day ID, use it. Otherwise, find the day containing the stop we're over
+    let toDayId = over.id as string;
+    let isOverStop = false;
+    
+    // Check if we're over another stop
+    for (const day of days) {
+      if (day.stops.some(s => s.id === over.id)) {
+        toDayId = day.id;
+        isOverStop = true;
+        break;
+      }
+    }
 
     // Handle reordering within the same day
     if (fromDayId === toDayId) {
@@ -265,17 +295,11 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
       if (!day) return;
 
       const oldIndex = day.stops.findIndex(s => s.id === stopId);
-      const overId = over.id as string;
+      const newIndex = day.stops.findIndex(s => s.id === over.id);
       
-      // Check if we're dropping over another stop (for reordering)
-      if (overId.includes('-')) {
-        const overStopId = overId.split('-')[1];
-        const newIndex = day.stops.findIndex(s => s.id === overStopId);
-        
-        if (oldIndex !== newIndex && oldIndex !== -1 && newIndex !== -1) {
-          onReorderStops(fromDayId, oldIndex, newIndex);
-          toast.success("Activity reordered");
-        }
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        onReorderStops(fromDayId, oldIndex, newIndex);
+        toast.success("Activity reordered");
       }
       return;
     }
