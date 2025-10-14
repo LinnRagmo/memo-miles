@@ -161,9 +161,9 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current!,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: "mapbox://styles/mapbox/outdoors-v12",
         center: allStops[0].coordinates!,
-        zoom: 6,
+        zoom: 5,
       });
 
       map.current.on('error', (e) => {
@@ -232,8 +232,8 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
           },
           paint: {
             "line-color": lineColor,
-            "line-width": 4,
-            "line-opacity": 0.8,
+            "line-width": 5,
+            "line-opacity": 0.9,
           },
         });
         console.log('Route layer added successfully');
@@ -322,22 +322,23 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] h-[90vh] p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b border-border bg-card flex flex-row items-center justify-between">
-          <div>
-            <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              {trip.title} - Full Route
+      <DialogContent className="max-w-[98vw] w-[98vw] h-[98vh] p-0 gap-0">
+        <DialogHeader className="px-4 py-2 border-b border-border bg-card flex flex-row items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="truncate">{trip.title} - Full Route</span>
             </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground mt-0.5">
+            <DialogDescription className="text-xs text-muted-foreground">
               {trip.startDate} - {trip.endDate} • {allStops.length} stops
             </DialogDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {mapboxToken && (
               <Button
                 variant="outline"
                 size="sm"
+                className="text-xs h-7"
                 onClick={() => {
                   setMapboxToken("");
                   setTokenError(false);
@@ -349,9 +350,9 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
             )}
             <button
               onClick={onClose}
-              className="rounded-lg p-2 hover:bg-muted transition-colors"
+              className="rounded-lg p-1.5 hover:bg-muted transition-colors"
             >
-              <X className="w-5 h-5 text-muted-foreground" />
+              <X className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
         </DialogHeader>
