@@ -75,7 +75,17 @@ const JournalPage = () => {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        setEntries(parsed);
+        // Validate that entries have required structure
+        const validEntries = Array.isArray(parsed) 
+          ? parsed.filter((entry: any) => 
+              entry && 
+              entry.id && 
+              entry.date && 
+              entry.title && 
+              Array.isArray(entry.sections)
+            )
+          : [];
+        setEntries(validEntries);
       } catch (error) {
         console.error("Error parsing journal entries:", error);
         setEntries([]);
@@ -338,6 +348,11 @@ const JournalPage = () => {
           ) : (
             <div className="space-y-8">
               {entries.map((entry) => {
+                // Ensure sections array exists
+                if (!entry.sections || !Array.isArray(entry.sections)) {
+                  return null;
+                }
+                
                 // Find first photo for cover
                 const coverPhoto = entry.sections.find(s => s.type === "photo" && s.content)?.content;
                 
