@@ -109,17 +109,26 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
   }, [isOpen, mapboxToken, trip.days.length]);
 
   useEffect(() => {
-    console.log('TotalRouteModal useEffect triggered:', { isOpen, hasContainer: !!mapContainer.current, hasToken: !!mapboxToken });
+    console.log('TotalRouteModal useEffect triggered:', { isOpen, hasToken: !!mapboxToken });
     
-    if (!isOpen || !mapContainer.current || !mapboxToken) {
+    // Only check isOpen and token, NOT container
+    if (!isOpen || !mapboxToken) {
       setIsMapLoading(false);
-      console.log('Early return - conditions not met');
+      console.log('Early return - modal closed or no token');
       return;
     }
 
     // Small delay to ensure Dialog is fully rendered
     const timer = setTimeout(() => {
-      if (!mapContainer.current) return;
+      console.log('Checking container after timeout:', { hasContainer: !!mapContainer.current });
+      
+      if (!mapContainer.current) {
+        console.log('Container still not ready after timeout');
+        setIsMapLoading(false);
+        return;
+      }
+      
+      console.log('Container ready, initializing map...');
 
       // Get all stops with coordinates from all days (including geocoded)
       const allStops = trip.days.flatMap(day => 
@@ -284,7 +293,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
         });
         map.current.fitBounds(bounds, { padding: 50 });
       });
-    }, 100);
+    }, 150);
 
     // Cleanup
     return () => {
