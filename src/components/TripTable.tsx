@@ -298,6 +298,35 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
       const newIndex = day.stops.findIndex(s => s.id === over.id);
       
       if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        // Check if reordering would violate time constraints
+        if (movingStop.time) {
+          const movingTime = parseTimeToMinutes(movingStop.time);
+          
+          // Check the stop that will be before the moved stop
+          if (newIndex > 0) {
+            const beforeStop = day.stops[newIndex - (newIndex > oldIndex ? 0 : 1)];
+            if (beforeStop.time) {
+              const beforeTime = parseTimeToMinutes(beforeStop.time);
+              if (movingTime < beforeTime) {
+                toast.error("Cannot reorder: time would be out of sequence");
+                return;
+              }
+            }
+          }
+          
+          // Check the stop that will be after the moved stop
+          if (newIndex < day.stops.length - 1) {
+            const afterStop = day.stops[newIndex + (newIndex > oldIndex ? 1 : 0)];
+            if (afterStop.time) {
+              const afterTime = parseTimeToMinutes(afterStop.time);
+              if (movingTime > afterTime) {
+                toast.error("Cannot reorder: time would be out of sequence");
+                return;
+              }
+            }
+          }
+        }
+        
         onReorderStops(fromDayId, oldIndex, newIndex);
         toast.success("Activity reordered");
       }
