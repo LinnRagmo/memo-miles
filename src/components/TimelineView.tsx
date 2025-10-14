@@ -78,19 +78,18 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
         ref={stopRef}
         className={`relative flex gap-4 group transition-all ${
           isHighlighted ? 'scale-[1.02]' : ''
-        } ${isDragging ? 'z-50 cursor-grabbing' : 'cursor-grab'}`}
-        onClick={() => onStopClick?.(stop.id)}
-        {...attributes}
-        {...listeners}
+        } ${isDragging ? 'z-50 cursor-grabbing' : ''}`}
       >
         {/* Timeline line */}
         {!isLast && (
           <div className="absolute left-5 top-12 w-0.5 h-[calc(100%+3rem)] -ml-px bg-border" />
         )}
         
-        {/* Icon */}
+        {/* Icon with drag handle */}
         <div className="flex flex-col items-center gap-1">
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
+          <div className="cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+            <GripVertical className="w-4 h-4 text-muted-foreground" />
+          </div>
           <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
             stop.type === 'drive' ? 'bg-primary text-primary-foreground' :
             stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
@@ -101,7 +100,10 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
         </div>
         
         {/* Content */}
-        <div className="flex-1 pb-6">
+        <div 
+          className="flex-1 pb-6"
+          onClick={() => onStopClick?.(stop.id)}
+        >
           <div className={`relative bg-card rounded-lg border p-4 shadow-soft transition-all ${
             isHighlighted 
               ? 'border-primary shadow-medium ring-2 ring-primary/20' 
@@ -168,7 +170,7 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
                   <p className="text-sm text-muted-foreground">{stop.notes}</p>
                 )}
               </div>
-              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-1">
                 {stop.coordinates && (
                   <MapPin className={`w-4 h-4 flex-shrink-0 transition-colors ${
                     isHighlighted ? 'text-primary' : 'text-muted-foreground'
