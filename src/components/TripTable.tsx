@@ -35,6 +35,7 @@ interface TripTableProps {
   onMoveActivity: (fromDayId: string, toDayId: string, stopId: string, targetIndex?: number) => void;
   onAddDay: (insertIndex: number) => void;
   onRemoveDay: (dayId: string) => void;
+  onReorderStops: (dayId: string, oldIndex: number, newIndex: number) => void;
 }
 
 const getEventIcon = (type: string) => {
@@ -71,14 +72,14 @@ const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={`bg-muted/50 rounded-md p-3 border border-border hover:bg-muted transition-colors ${
         isDragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
     >
       <div className="flex items-start gap-2">
-        <button {...attributes} {...listeners} className="mt-1 touch-none">
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-        </button>
+        <GripVertical className="w-4 h-4 text-muted-foreground mt-1" />
         <div className="flex-1">
           {/* Time - only show if it exists */}
           {stop.time && (
@@ -108,9 +109,10 @@ interface DroppableDayProps {
   dayIndex: number;
   onDayClick: (day: TripDay) => void;
   onRemoveDay: (dayId: string) => void;
+  onReorderStops: (dayId: string, oldIndex: number, newIndex: number) => void;
 }
 
-const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay }: DroppableDayProps) => {
+const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }: DroppableDayProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: day.id,
     data: { day },
@@ -202,7 +204,7 @@ const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay }: DroppableDayPr
   );
 };
 
-const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, onRemoveDay }: TripTableProps) => {
+const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, onRemoveDay, onReorderStops }: TripTableProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeStop, setActiveStop] = useState<Stop | null>(null);
 
@@ -257,6 +259,28 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
     const stopId = active.data.current.stop.id;
     const movingStop = active.data.current.stop as Stop;
 
+    // Handle reordering within the same day
+    if (fromDayId === toDayId) {
+      const day = days.find(d => d.id === fromDayId);
+      if (!day) return;
+
+      const oldIndex = day.stops.findIndex(s => s.id === stopId);
+      const overId = over.id as string;
+      
+      // Check if we're dropping over another stop (for reordering)
+      if (overId.includes('-')) {
+        const overStopId = overId.split('-')[1];
+        const newIndex = day.stops.findIndex(s => s.id === overStopId);
+        
+        if (oldIndex !== newIndex && oldIndex !== -1 && newIndex !== -1) {
+          onReorderStops(fromDayId, oldIndex, newIndex);
+          toast.success("Activity reordered");
+        }
+      }
+      return;
+    }
+
+    // Handle moving between days
     if (fromDayId !== toDayId) {
       const targetDay = days.find(d => d.id === toDayId);
       
@@ -345,13 +369,14 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
           </Button>
 
           {days.map((day, dayIndex) => (
-            <div key={day.id} className="inline-flex items-start gap-2">
-              <DroppableDay
-                day={day}
-                dayIndex={dayIndex}
-                onDayClick={onDayClick}
-                onRemoveDay={onRemoveDay}
-              />
+              <div key={day.id} className="inline-flex items-start gap-2">
+                <DroppableDay
+                  day={day}
+                  dayIndex={dayIndex}
+                  onDayClick={onDayClick}
+                  onRemoveDay={onRemoveDay}
+                  onReorderStops={onReorderStops}
+                />
               {/* Add button after each day */}
               <Button
                 variant="outline"

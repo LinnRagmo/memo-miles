@@ -556,6 +556,26 @@ const Index = () => {
     saveTrip(updatedTrip);
   };
 
+  const handleReorderStops = (dayId: string, oldIndex: number, newIndex: number) => {
+    if (!trip) return;
+
+    const updatedTrip = {
+      ...trip,
+      days: trip.days.map(day => {
+        if (day.id === dayId) {
+          const newStops = [...day.stops];
+          const [movedStop] = newStops.splice(oldIndex, 1);
+          newStops.splice(newIndex, 0, movedStop);
+          return { ...day, stops: newStops };
+        }
+        return day;
+      })
+    };
+
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -693,6 +713,7 @@ const Index = () => {
               onMoveActivity={handleMoveActivity}
               onAddDay={handleAddDay}
               onRemoveDay={handleRemoveDay}
+              onReorderStops={handleReorderStops}
             />
           </div>
 
