@@ -99,7 +99,7 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
                     Add Event
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-96 p-0" align="start" side="bottom">
+                <PopoverContent className="w-96 p-0" align="start" side="bottom" sideOffset={8} avoidCollisions>
                   <AddEventForm
                     onAddEvent={handleAddEvent}
                     onCancel={() => setShowAddFormPopover(false)}
