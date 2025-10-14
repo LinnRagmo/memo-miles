@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { startLocation, endLocation } = await req.json();
+    const { startLocation, endLocation, mapboxToken } = await req.json();
 
     if (!startLocation || !endLocation) {
       return new Response(
@@ -20,12 +20,12 @@ serve(async (req) => {
       );
     }
 
-    const MAPBOX_TOKEN = Deno.env.get("MAPBOX_ACCESS_TOKEN");
+    const MAPBOX_TOKEN = mapboxToken || Deno.env.get("MAPBOX_ACCESS_TOKEN");
     
     if (!MAPBOX_TOKEN) {
       return new Response(
-        JSON.stringify({ error: "Mapbox token not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Mapbox token not provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

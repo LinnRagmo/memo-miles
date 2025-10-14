@@ -157,7 +157,8 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
           startCoords,
           endCoords,
           currentStop.location,
-          nextStop.location
+          nextStop.location,
+          mapboxToken
         );
         
         if (geometry) {

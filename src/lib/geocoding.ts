@@ -127,7 +127,8 @@ export async function getRouteGeometry(
   startCoords: [number, number],
   endCoords: [number, number],
   startLocation: string,
-  endLocation: string
+  endLocation: string,
+  mapboxToken: string
 ): Promise<any | null> {
   try {
     const { data, error } = await (await import("@/integrations/supabase/client")).supabase.functions.invoke(
@@ -136,6 +137,7 @@ export async function getRouteGeometry(
         body: {
           startLocation,
           endLocation,
+          mapboxToken,
         },
       }
     );
