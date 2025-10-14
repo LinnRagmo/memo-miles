@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import heroRoadTripImg from "@/assets/hero-roadtrip-artsy.jpg";
+import heroRoadTripImg from "@/assets/hero-roadtrip-natural.jpg";
 import { Lightbulb, Map, BookOpen } from "lucide-react";
 
 const LandingPage = () => {
