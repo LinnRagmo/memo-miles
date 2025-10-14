@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import australiaRoadTripImg from "@/assets/australia-road-trip.jpg";
+import heroRoadTripImg from "@/assets/hero-roadtrip.jpg";
 import { Lightbulb, Map, BookOpen } from "lucide-react";
 
 const LandingPage = () => {
@@ -30,7 +30,7 @@ const LandingPage = () => {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url(${australiaRoadTripImg})`,
+          backgroundImage: `url(${heroRoadTripImg})`,
           filter: "brightness(0.85) saturate(1.1)",
         }}
       />
