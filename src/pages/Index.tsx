@@ -397,11 +397,40 @@ const Index = () => {
       days: trip.days.map(day => {
         if (day.id === dayId) {
           const newStops = [...day.stops];
+          
+          // If insertAtIndex is specified, use it
           if (insertAtIndex !== undefined) {
             newStops.splice(insertAtIndex, 0, newStop);
+          } else if (newStop.time) {
+            // Find the correct position based on time
+            const parseTime = (timeStr: string): number => {
+              const [hours, minutes] = timeStr.split(':').map(Number);
+              return hours * 60 + minutes;
+            };
+            
+            const newTime = parseTime(newStop.time);
+            let insertPosition = newStops.length; // Default to end
+            
+            for (let i = 0; i < newStops.length; i++) {
+              if (newStops[i].time) {
+                const existingTime = parseTime(newStops[i].time);
+                if (newTime < existingTime) {
+                  insertPosition = i;
+                  break;
+                }
+              } else {
+                // If we encounter a stop without time, insert before it
+                insertPosition = i;
+                break;
+              }
+            }
+            
+            newStops.splice(insertPosition, 0, newStop);
           } else {
+            // No time set, add at the end
             newStops.push(newStop);
           }
+          
           return { ...day, stops: newStops };
         }
         return day;
@@ -413,13 +442,8 @@ const Index = () => {
     // Update selectedDay to reflect the new stop
     setSelectedDay(prev => {
       if (prev && prev.id === dayId) {
-        const newStops = [...prev.stops];
-        if (insertAtIndex !== undefined) {
-          newStops.splice(insertAtIndex, 0, newStop);
-        } else {
-          newStops.push(newStop);
-        }
-        return { ...prev, stops: newStops };
+        const day = updatedTrip.days.find(d => d.id === dayId);
+        return day || prev;
       }
       return prev;
     });
