@@ -80,14 +80,16 @@ const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
           <GripVertical className="w-4 h-4 text-muted-foreground" />
         </button>
         <div className="flex-1">
-          {/* Time */}
-          <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">{stop.time || 'Time not set'}</span>
-          </div>
+          {/* Time - only show if it exists */}
+          {stop.time && (
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-bold text-foreground">{stop.time}</span>
+            </div>
+          )}
 
           {/* Event/Activity */}
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2">
             <span className="text-muted-foreground">
               {getEventIcon(stop.type)}
             </span>
@@ -95,22 +97,6 @@ const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
               {stop.location}
             </span>
           </div>
-
-          {/* Driving Time */}
-          {stop.type === "drive" && day.drivingTime && (
-            <div className="flex items-center gap-2 mb-2">
-              <Car className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{day.drivingTime}</span>
-            </div>
-          )}
-
-          {/* Notes */}
-          {stop.notes && (
-            <div className="flex items-start gap-2 mt-2 pt-2 border-t border-border">
-              <StickyNote className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <span className="text-xs text-muted-foreground">{stop.notes}</span>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -229,7 +215,19 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
     const { active } = event;
     setActiveId(active.id as string);
     if (active.data.current) {
-      setActiveStop(active.data.current.stop);
+      if (active.data.current.type === 'favorite') {
+        // Create a temporary stop from favorite data
+        setActiveStop({
+          id: 'temp',
+          time: '',
+          location: active.data.current.location,
+          type: 'activity',
+          notes: active.data.current.notes,
+          coordinates: active.data.current.coordinates,
+        });
+      } else {
+        setActiveStop(active.data.current.stop);
+      }
     }
   };
 
@@ -240,6 +238,19 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
     setActiveStop(null);
 
     if (!over || !active.data.current) return;
+
+    // Handle dragging from favorites
+    if (active.data.current.type === 'favorite') {
+      const toDayId = over.id as string;
+      const targetDay = days.find(d => d.id === toDayId);
+      
+      if (!targetDay) return;
+
+      // Add the favorite as a new stop
+      onMoveActivity('favorites', toDayId, 'temp-favorite');
+      toast.success("Favorite added to day");
+      return;
+    }
 
     const fromDayId = active.data.current.dayId;
     const toDayId = over.id as string;

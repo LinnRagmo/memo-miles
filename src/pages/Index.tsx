@@ -5,17 +5,23 @@ import TripTable from "@/components/TripTable";
 import DayDetailModal from "@/components/DayDetailModal";
 import TotalRouteModal from "@/components/TotalRouteModal";
 import { PlanSidebar } from "@/components/PlanSidebar";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, Map } from "lucide-react";
+import { Calendar as CalendarIcon, Map, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { fetchSunriseSunset, parseDate } from "@/lib/sunriseSunset";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, eachDayOfInterval, parseISO, differenceInDays, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 
 // Sample data removed - trips are now loaded from database
 
@@ -28,6 +34,7 @@ const Index = () => {
   const [selectedDay, setSelectedDay] = useState<TripDay | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTotalRouteOpen, setIsTotalRouteOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
 
   // Auth check
   useEffect(() => {
@@ -559,13 +566,48 @@ const Index = () => {
   }
 
   return (
-    <SidebarProvider>
+    <DndContext
+      sensors={useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor)
+      )}
+      onDragEnd={(event) => {
+        const { active, over } = event;
+        
+        if (!over || !active.data.current) return;
+
+        // Handle dragging from favorites
+        if (active.data.current.type === 'favorite') {
+          const toDayId = over.id as string;
+          const targetDay = trip?.days.find(d => d.id === toDayId);
+          
+          if (!targetDay) return;
+
+          const newStop: Omit<Stop, "id"> = {
+            time: "",
+            location: active.data.current.location,
+            type: "activity",
+            notes: active.data.current.notes,
+            coordinates: active.data.current.coordinates,
+          };
+
+          handleAddEvent(toDayId, newStop);
+        }
+      }}
+    >
       <div className="min-h-screen flex w-full bg-gradient-subtle">
-        <PlanSidebar onAddToDay={handleAddFavoriteToDay} />
+        {isFavoritesOpen && <PlanSidebar onAddToDay={handleAddFavoriteToDay} onClose={() => setIsFavoritesOpen(false)} />}
         
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex items-center gap-2 px-6 py-4 border-b border-border bg-card shadow-soft">
-            <SidebarTrigger />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
+              className="flex-shrink-0"
+            >
+              <Heart className={cn("w-4 h-4", isFavoritesOpen && "fill-primary text-primary")} />
+            </Button>
             <div className="flex-1 flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-semibold text-foreground">{trip.title}</h1>
@@ -654,7 +696,7 @@ const Index = () => {
           />
         </div>
       </div>
-    </SidebarProvider>
+    </DndContext>
   );
 };
 
