@@ -28,6 +28,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
   const [geocodedStops, setGeocodedStops] = useState<Map<string, [number, number]>>(new Map());
   const [geocodedDriveRoutes, setGeocodedDriveRoutes] = useState<Map<string, { start: [number, number], end: [number, number] }>>(new Map());
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [tokenError, setTokenError] = useState(false);
   const { toast } = useToast();
 
   const handleTokenSubmit = () => {
@@ -167,6 +168,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
 
       map.current.on('error', (e) => {
         console.error('Mapbox error:', e);
+        setTokenError(true);
         toast({
           title: "Map Error",
           description: "Failed to load map. Please check your Mapbox token is valid.",
@@ -331,16 +333,31 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
               {trip.startDate} - {trip.endDate} • {allStops.length} stops
             </DialogDescription>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 hover:bg-muted transition-colors"
-          >
-            <X className="w-5 h-5 text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-2">
+            {mapboxToken && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setMapboxToken("");
+                  setTokenError(false);
+                  localStorage.removeItem("mapboxToken");
+                }}
+              >
+                Change Token
+              </Button>
+            )}
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 hover:bg-muted transition-colors"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </div>
         </DialogHeader>
 
         <div className="flex-1 relative">
-          {!mapboxToken ? (
+          {!mapboxToken || tokenError ? (
             <div className="absolute inset-0 flex items-center justify-center bg-muted/20 p-8">
               <div className="max-w-md w-full bg-card p-6 rounded-lg shadow-lg border border-border">
                 <h3 className="text-lg font-semibold mb-2 text-foreground">Mapbox Token Required</h3>
