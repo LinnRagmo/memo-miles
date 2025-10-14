@@ -72,11 +72,11 @@ const TripDetailModal = ({
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="gap-1 bg-background/90 backdrop-blur">
+              <Badge className="gap-1 bg-primary text-primary-foreground backdrop-blur pointer-events-none">
                 <Clock className="w-3 h-3" />
                 {trip.duration}
               </Badge>
-              <Badge variant="secondary" className="bg-background/90 backdrop-blur">
+              <Badge className="bg-primary text-primary-foreground backdrop-blur pointer-events-none">
                 {trip.distance}
               </Badge>
             </div>
