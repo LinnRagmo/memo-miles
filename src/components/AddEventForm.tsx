@@ -5,9 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, Mountain, Utensils, Camera, Coffee, Eye, Loader2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Plus, X, Mountain, Utensils, Camera, Coffee, Eye, Loader2, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useFavorites } from "@/contexts/FavoritesContext";
 
 interface AddEventFormProps {
   onAddEvent: (event: Omit<Stop, "id">) => void;
@@ -23,6 +26,7 @@ const activityIcons = [
 ] as const;
 
 const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
+  const { favorites } = useFavorites();
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
   const [startLocation, setStartLocation] = useState("");
@@ -31,6 +35,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [activityIcon, setActivityIcon] = useState<"hiking" | "food" | "sightseeing" | "camera" | "coffee">("hiking");
   const [notes, setNotes] = useState("");
   const [calculating, setCalculating] = useState(false);
+  const [favoritePopoverOpen, setFavoritePopoverOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,15 +218,63 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
           <Label htmlFor="location" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
             Location
           </Label>
-          <Input
-            id="location"
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Enter location..."
-            required
-            className="h-9"
-          />
+          <div className="relative">
+            <Input
+              id="location"
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Enter location..."
+              required
+              className="h-9 pr-10"
+            />
+            <Popover open={favoritePopoverOpen} onOpenChange={setFavoritePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-9 w-9 p-0 hover:bg-transparent"
+                >
+                  <Heart className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="p-3 border-b border-border">
+                  <h4 className="text-sm font-semibold">Favorite Places</h4>
+                </div>
+                <ScrollArea className="h-64">
+                  {favorites.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      No favorite places yet
+                    </div>
+                  ) : (
+                    <div className="p-2">
+                      {favorites.map((favorite) => (
+                        <button
+                          key={favorite.id}
+                          type="button"
+                          onClick={() => {
+                            setLocation(favorite.name);
+                            setFavoritePopoverOpen(false);
+                          }}
+                          className="w-full text-left p-3 rounded-md hover:bg-muted transition-colors mb-1"
+                        >
+                          <div className="font-medium text-sm">{favorite.name}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-1">
+                            {favorite.description}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            From: {favorite.tripTitle}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       )}
 
