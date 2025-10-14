@@ -698,14 +698,6 @@ const Index = () => {
         
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex items-center gap-2 px-6 py-4 border-b border-border bg-card shadow-soft">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
-              className="flex-shrink-0"
-            >
-              <Heart className={cn("w-4 h-4", isFavoritesOpen && "fill-primary text-primary")} />
-            </Button>
             <div className="flex-1 flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-semibold text-foreground">{trip.title}</h1>
