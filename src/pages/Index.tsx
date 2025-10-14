@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Trip, TripDay, Stop } from "@/types/trip";
-import TripHeader from "@/components/TripHeader";
 import TripTable from "@/components/TripTable";
 import DayDetailModal from "@/components/DayDetailModal";
 import TotalRouteModal from "@/components/TotalRouteModal";
 import { PlanSidebar } from "@/components/PlanSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarIcon, Map } from "lucide-react";
 import { toast } from "sonner";
 import { fetchSunriseSunset, parseDate } from "@/lib/sunriseSunset";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, eachDayOfInterval, parseISO, differenceInDays, addDays } from "date-fns";
+import { cn } from "@/lib/utils";
 
 // Sample data removed - trips are now loaded from database
 
@@ -559,27 +563,80 @@ const Index = () => {
       <div className="min-h-screen flex w-full bg-gradient-subtle">
         <PlanSidebar onAddToDay={handleAddFavoriteToDay} />
         
-        <div className="flex-1 flex flex-col">
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-background/50 backdrop-blur">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex items-center gap-2 px-6 py-4 border-b border-border bg-card shadow-soft">
             <SidebarTrigger />
+            <div className="flex-1 flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold text-foreground">{trip.title}</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "justify-start text-left font-normal px-2 py-1 h-auto hover:bg-muted",
+                          "text-sm text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                        {trip.startDate}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={new Date(trip.startDate)}
+                        onSelect={(date) => date && handleDateChange(date, new Date(trip.endDate))}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <span className="text-sm text-muted-foreground">→</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "justify-start text-left font-normal px-2 py-1 h-auto hover:bg-muted",
+                          "text-sm text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                        {trip.endDate}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={new Date(trip.endDate)}
+                        onSelect={(date) => date && handleDateChange(new Date(trip.startDate), date)}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              
+              <Button onClick={() => setIsTotalRouteOpen(true)} variant="outline" className="shadow-soft">
+                <Map className="w-4 h-4 mr-2" />
+                Show Total Route
+              </Button>
+            </div>
           </div>
-
-          <TripHeader
-            title={trip.title}
-            startDate={trip.startDate}
-            endDate={trip.endDate}
-            onShowTotalRoute={() => setIsTotalRouteOpen(true)}
-            onDateChange={handleDateChange}
-          />
           
-          <TripTable
-            days={trip.days}
-            onDayClick={handleDayClick}
-            onUpdateDay={handleUpdateDay}
-            onMoveActivity={handleMoveActivity}
-            onAddDay={handleAddDay}
-            onRemoveDay={handleRemoveDay}
-          />
+          <div className="flex-1 overflow-x-auto overflow-y-hidden">
+            <TripTable
+              days={trip.days}
+              onDayClick={handleDayClick}
+              onUpdateDay={handleUpdateDay}
+              onMoveActivity={handleMoveActivity}
+              onAddDay={handleAddDay}
+              onRemoveDay={handleRemoveDay}
+            />
+          </div>
 
           <DayDetailModal
             day={selectedDay}

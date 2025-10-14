@@ -321,39 +321,37 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="container mx-auto px-6 py-6">
-        <div className="overflow-x-auto">
-          <div className="inline-flex items-start gap-2 min-w-full pb-4">
-            {/* Add button before first day */}
-            <Button
-              variant="outline"
-              size="icon"
-              className="flex-shrink-0 w-8 h-8 mt-20"
-              onClick={() => onAddDay(0)}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
+      <div className="px-6 py-6">
+        <div className="inline-flex items-start gap-2 pb-4">
+          {/* Add button before first day */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="flex-shrink-0 w-8 h-8 mt-20"
+            onClick={() => onAddDay(0)}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
 
-            {days.map((day, dayIndex) => (
-              <div key={day.id} className="inline-flex items-start gap-2">
-                <DroppableDay
-                  day={day}
-                  dayIndex={dayIndex}
-                  onDayClick={onDayClick}
-                  onRemoveDay={onRemoveDay}
-                />
-                {/* Add button after each day */}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="flex-shrink-0 w-8 h-8 mt-20"
-                  onClick={() => onAddDay(dayIndex + 1)}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
+          {days.map((day, dayIndex) => (
+            <div key={day.id} className="inline-flex items-start gap-2">
+              <DroppableDay
+                day={day}
+                dayIndex={dayIndex}
+                onDayClick={onDayClick}
+                onRemoveDay={onRemoveDay}
+              />
+              {/* Add button after each day */}
+              <Button
+                variant="outline"
+                size="icon"
+                className="flex-shrink-0 w-8 h-8 mt-20"
+                onClick={() => onAddDay(dayIndex + 1)}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          ))}
         </div>
       </div>
 
