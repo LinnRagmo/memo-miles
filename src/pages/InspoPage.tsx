@@ -91,6 +91,26 @@ const sampleTrips: RoadTripPost[] = [
       { location: "Sedona, AZ", description: "Red rock country with spiritual vortexes" },
     ],
   },
+  {
+    id: "4",
+    title: "En resa genom Sverige",
+    description: "A breathtaking journey from Åmål to Issy.",
+    duration: "7 Days",
+    distance: "600 miles",
+    author: "Lisen o Jossan",
+    date: "May 17, 2024",
+    readTime: "8 min read",
+    heroImage: heroImagePCH,
+    highlights: ["Issy", "Åmål", "Karlstad", "Grums"],
+    stops: [
+      { location: "Ica-Åmål", description: "Börja i Dalslands pärla, där eliten shoppar med stil och finess" },
+      { location: "Grums", description: "Gör papper och Luktar prutt" },
+      { location: "Karlstad", description: "Mycket att erbjuda, trevligt utom när tågen byggs om, Musikhjälpen 2025" },
+      { location: "Västerås", description: "Sväng förbi ABB och Hallsta" },
+      { location: "Kungshamra", description: "Bra ställe o föra på" },
+      { location: "Issy", description: "Varning för sprängning" },
+    ],
+  },
 ];
 
 const InspoPage = () => {
@@ -142,8 +162,8 @@ const InspoPage = () => {
   }, [userPosts]);
 
   const handleSaveFavorite = (stop: { location: string; description: string }, tripTitle: string) => {
-    const favoriteId = `${tripTitle}-${stop.location}`.replace(/\s+/g, '-').toLowerCase();
-    
+    const favoriteId = `${tripTitle}-${stop.location}`.replace(/\s+/g, "-").toLowerCase();
+
     if (isFavorite(favoriteId)) {
       toast.info("Already in favorites");
       return;
@@ -225,8 +245,8 @@ const InspoPage = () => {
       date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
       readTime: "5 min read",
       heroImage: newPost.heroImage || heroImagePCH,
-      highlights: newPost.highlights.filter(h => h.trim()),
-      stops: newPost.stops.filter(s => s.location.trim()),
+      highlights: newPost.highlights.filter((h) => h.trim()),
+      stops: newPost.stops.filter((s) => s.location.trim()),
     };
 
     setUserPosts([post, ...userPosts]);
@@ -245,7 +265,7 @@ const InspoPage = () => {
   };
 
   const deletePost = (id: string) => {
-    setUserPosts(userPosts.filter(p => p.id !== id));
+    setUserPosts(userPosts.filter((p) => p.id !== id));
     toast.success("Post deleted");
   };
 
@@ -262,15 +282,12 @@ const InspoPage = () => {
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      const matchesSearch = 
+      const matchesSearch =
         trip.title.toLowerCase().includes(query) ||
         trip.description.toLowerCase().includes(query) ||
         trip.author.toLowerCase().includes(query) ||
-        trip.highlights.some(h => h.toLowerCase().includes(query)) ||
-        trip.stops.some(s => 
-          s.location.toLowerCase().includes(query) || 
-          s.description.toLowerCase().includes(query)
-        );
+        trip.highlights.some((h) => h.toLowerCase().includes(query)) ||
+        trip.stops.some((s) => s.location.toLowerCase().includes(query) || s.description.toLowerCase().includes(query));
       if (!matchesSearch) return false;
     }
 
@@ -385,9 +402,7 @@ const InspoPage = () => {
                       />
                     </label>
                   </Button>
-                  {newPost.heroImage && (
-                    <span className="text-sm text-muted-foreground">Image uploaded</span>
-                  )}
+                  {newPost.heroImage && <span className="text-sm text-muted-foreground">Image uploaded</span>}
                 </div>
                 {newPost.heroImage && (
                   <img src={newPost.heroImage} alt="Preview" className="w-full h-48 object-cover rounded-md mt-2" />
@@ -472,14 +487,12 @@ const InspoPage = () => {
 
         <div className="mb-12">
           <div className="text-center mb-8">
-            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-              Road Trip Inspiration
-            </h1>
+            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">Road Trip Inspiration</h1>
             <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto">
               Discover epic journeys and plan your next adventure with our curated collection of road trip stories
             </p>
           </div>
-          
+
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto space-y-4">
             <div className="relative">
@@ -499,7 +512,7 @@ const InspoPage = () => {
                 <Filter className="w-4 h-4" />
                 Filters:
               </div>
-              
+
               <Select value={durationFilter} onValueChange={setDurationFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Duration" />
@@ -525,8 +538,8 @@ const InspoPage = () => {
               </Select>
 
               {(durationFilter !== "all" || distanceFilter !== "all") && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => {
                     setDurationFilter("all");
@@ -549,7 +562,7 @@ const InspoPage = () => {
           onSaveFavorite={handleSaveFavorite}
           onDeletePost={deletePost}
           isFavorite={isFavorite}
-          isUserPost={userPosts.some(p => p.id === selectedTrip?.id)}
+          isUserPost={userPosts.some((p) => p.id === selectedTrip?.id)}
         />
 
         {filteredTrips.length === 0 ? (
@@ -562,8 +575,8 @@ const InspoPage = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTrips.map((trip) => (
-              <Card 
-                key={trip.id} 
+              <Card
+                key={trip.id}
                 className="group cursor-pointer border-2 border-border hover:border-primary/50 transition-all duration-300 overflow-hidden hover:shadow-lg"
                 onClick={() => handleTripClick(trip)}
               >
@@ -576,7 +589,7 @@ const InspoPage = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   {/* Delete button for user posts */}
-                  {userPosts.some(p => p.id === trip.id) && (
+                  {userPosts.some((p) => p.id === trip.id) && (
                     <Button
                       size="sm"
                       variant="destructive"
@@ -603,17 +616,13 @@ const InspoPage = () => {
                       <Clock className="w-3 h-3" />
                       {trip.duration}
                     </Badge>
-                    <Badge variant="outline">
-                      {trip.distance}
-                    </Badge>
+                    <Badge variant="outline">{trip.distance}</Badge>
                   </div>
 
                   {/* Highlights */}
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      Highlights
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 overflow-hidden" style={{ maxHeight: '3.5rem' }}>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Highlights</p>
+                    <div className="flex flex-wrap gap-1.5 overflow-hidden" style={{ maxHeight: "3.5rem" }}>
                       {trip.highlights.map((highlight, index) => (
                         <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
                           {highlight}
