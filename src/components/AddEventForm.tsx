@@ -61,33 +61,20 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
       coordinates: undefined,
     };
 
-    // For drive type, calculate route
+    // For drive type, use hard-coded values
     if (type === "drive") {
-      setCalculating(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('calculate-route', {
-          body: { startLocation, endLocation }
-        });
-
-        if (error) throw error;
-
-        if (data) {
-          eventData = {
-            ...eventData,
-            startLocation,
-            endLocation,
-            drivingTime: data.drivingTime,
-            distance: data.distance,
-          };
-          setDrivingTime(data.drivingTime);
-          setDistance(data.distance);
-        }
-      } catch (error: any) {
-        console.error("Error calculating route:", error);
-        toast.error("Could not calculate route. Adding without route details.");
-      } finally {
-        setCalculating(false);
-      }
+      const hardCodedDrivingTime = "3h 15 min";
+      const hardCodedDistance = "2190 km";
+      
+      eventData = {
+        ...eventData,
+        startLocation,
+        endLocation,
+        drivingTime: hardCodedDrivingTime,
+        distance: hardCodedDistance,
+      };
+      setDrivingTime(hardCodedDrivingTime);
+      setDistance(hardCodedDistance);
     }
 
     // For accommodation, if time is evening (after 6 PM), suggest next day morning
