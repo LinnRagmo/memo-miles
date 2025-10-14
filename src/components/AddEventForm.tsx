@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, X, Mountain, Utensils, Camera, Coffee, Eye, Loader2, Heart } from "lucide-react";
+import { Plus, X, Mountain, Utensils, Camera, Coffee, Eye, Loader2, Heart, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useFavorites } from "@/contexts/FavoritesContext";
+import { geocodeLocation } from "@/lib/geocoding";
 
 interface AddEventFormProps {
   onAddEvent: (event: Omit<Stop, "id">) => void;
@@ -38,6 +39,56 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [favoritePopoverOpen, setFavoritePopoverOpen] = useState(false);
   const [drivingTime, setDrivingTime] = useState("");
   const [distance, setDistance] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verifiedPlace, setVerifiedPlace] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'warning'>('idle');
+  const [mapboxToken, setMapboxToken] = useState<string>("");
+
+  // Load Mapbox token
+  useState(() => {
+    const token = localStorage.getItem('mapbox_access_token');
+    if (token) {
+      setMapboxToken(token);
+    }
+  });
+
+  const handleVerifyLocation = async () => {
+    if (!location.trim() || !mapboxToken) {
+      if (!mapboxToken) {
+        toast.error("Mapbox token not found. Please view the map first to set it up.");
+      }
+      return;
+    }
+
+    setVerifying(true);
+    setVerificationStatus('idle');
+    setVerifiedPlace(null);
+
+    try {
+      const result = await geocodeLocation(location, mapboxToken);
+      
+      if (result) {
+        setVerifiedPlace(result.placeName);
+        
+        // Check if the geocoded country matches user's intent
+        const userProvidedCountry = location.includes(',') || location.split(/\s+/).length > 1;
+        if (!userProvidedCountry && result.placeName) {
+          setVerificationStatus('warning');
+        } else {
+          setVerificationStatus('success');
+        }
+      } else {
+        toast.error("Location not found. Try adding the country name (e.g., 'Malmö, Sweden')");
+        setVerificationStatus('idle');
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      toast.error("Failed to verify location");
+      setVerificationStatus('idle');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +148,8 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     setNotes("");
     setDrivingTime("");
     setDistance("");
+    setVerifiedPlace(null);
+    setVerificationStatus('idle');
   };
 
   return (
@@ -223,62 +276,115 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
           <Label htmlFor="location" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
             Location
           </Label>
-          <div className="relative">
-            <Input
-              id="location"
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter location..."
-              required
-              className="h-9 pr-10"
-            />
-            <Popover open={favoritePopoverOpen} onOpenChange={setFavoritePopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-9 w-9 p-0 hover:bg-transparent"
-                >
-                  <Heart className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="end">
-                <div className="p-3 border-b border-border">
-                  <h4 className="text-sm font-semibold">Favorite Places</h4>
-                </div>
-                <ScrollArea className="h-64">
-                  {favorites.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      No favorite places yet
-                    </div>
+          <div className="space-y-2">
+            <div className="relative">
+              <Input
+                id="location"
+                type="text"
+                value={location}
+                onChange={(e) => {
+                  setLocation(e.target.value);
+                  setVerifiedPlace(null);
+                  setVerificationStatus('idle');
+                }}
+                placeholder="Enter location (e.g., Malmö, Sweden)..."
+                required
+                className="h-9 pr-10"
+              />
+              <Popover open={favoritePopoverOpen} onOpenChange={setFavoritePopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-9 w-9 p-0 hover:bg-transparent"
+                  >
+                    <Heart className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="end">
+                  <div className="p-3 border-b border-border">
+                    <h4 className="text-sm font-semibold">Favorite Places</h4>
+                  </div>
+                  <ScrollArea className="h-64">
+                    {favorites.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        No favorite places yet
+                      </div>
+                    ) : (
+                      <div className="p-2">
+                        {favorites.map((favorite) => (
+                          <button
+                            key={favorite.id}
+                            type="button"
+                            onClick={() => {
+                              setLocation(favorite.name);
+                              setFavoritePopoverOpen(false);
+                              setVerifiedPlace(null);
+                              setVerificationStatus('idle');
+                            }}
+                            className="w-full text-left p-3 rounded-md hover:bg-muted transition-colors mb-1"
+                          >
+                            <div className="font-medium text-sm">{favorite.name}</div>
+                            <div className="text-xs text-muted-foreground line-clamp-1">
+                              {favorite.description}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              From: {favorite.tripTitle}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="flex items-start gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleVerifyLocation}
+                disabled={!location.trim() || verifying || !mapboxToken}
+                className="h-8 text-xs"
+              >
+                {verifying ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-3 h-3 mr-1" />
+                    Verify Location
+                  </>
+                )}
+              </Button>
+              
+              {verificationStatus !== 'idle' && verifiedPlace && (
+                <div className={`flex-1 flex items-start gap-1.5 p-2 rounded-md text-xs ${
+                  verificationStatus === 'success' 
+                    ? 'bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20' 
+                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                }`}>
+                  {verificationStatus === 'success' ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                   ) : (
-                    <div className="p-2">
-                      {favorites.map((favorite) => (
-                        <button
-                          key={favorite.id}
-                          type="button"
-                          onClick={() => {
-                            setLocation(favorite.name);
-                            setFavoritePopoverOpen(false);
-                          }}
-                          className="w-full text-left p-3 rounded-md hover:bg-muted transition-colors mb-1"
-                        >
-                          <div className="font-medium text-sm">{favorite.name}</div>
-                          <div className="text-xs text-muted-foreground line-clamp-1">
-                            {favorite.description}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            From: {favorite.tripTitle}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                   )}
-                </ScrollArea>
-              </PopoverContent>
-            </Popover>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">Found: {verifiedPlace}</div>
+                    {verificationStatus === 'warning' && (
+                      <div className="text-[10px] mt-0.5 opacity-90">
+                        Add country name for accuracy (e.g., "{location}, Sweden")
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

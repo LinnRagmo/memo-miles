@@ -1,8 +1,11 @@
 // Geocoding utility using Mapbox Geocoding API
+import { extractCountryFromLocation, removeCountryFromLocation } from './countryMapping';
 
 interface GeocodingResult {
   coordinates: [number, number];
-  placeName: string;
+  placeName: string; // Full place name from Mapbox (e.g., "Malmö, Skåne County, Sweden")
+  shortName: string; // User's original input
+  country?: string; // ISO country code if detected
 }
 
 const geocodingCache = new Map<string, GeocodingResult>();
@@ -18,10 +21,19 @@ export async function geocodeLocation(
   }
 
   try {
-    const encodedLocation = encodeURIComponent(location);
-    const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedLocation}.json?access_token=${mapboxToken}&limit=1`
-    );
+    // Extract country from location if provided (e.g., "Malmö, Sweden" -> "se")
+    const countryCode = extractCountryFromLocation(location);
+    const searchQuery = countryCode ? removeCountryFromLocation(location) : location;
+    const encodedLocation = encodeURIComponent(searchQuery);
+    
+    // Build API URL with optional country filter
+    let apiUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedLocation}.json?access_token=${mapboxToken}&types=place,locality,neighborhood,address&limit=1`;
+    
+    if (countryCode) {
+      apiUrl += `&country=${countryCode}`;
+    }
+    
+    const response = await fetch(apiUrl);
 
     if (!response.ok) {
       throw new Error("Geocoding request failed");
@@ -34,6 +46,8 @@ export async function geocodeLocation(
       const result: GeocodingResult = {
         coordinates: feature.center as [number, number],
         placeName: feature.place_name,
+        shortName: location,
+        country: countryCode || undefined,
       };
 
       // Cache the result

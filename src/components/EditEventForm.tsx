@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, X, Mountain, Utensils, Camera, Coffee, Eye } from "lucide-react";
+import { Save, X, Mountain, Utensils, Camera, Coffee, Eye, MapPin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { geocodeLocation } from "@/lib/geocoding";
+import { toast } from "sonner";
 
 const activityIcons = [
   { value: 'hiking', label: 'Hiking', icon: Mountain },
@@ -27,6 +29,56 @@ const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
   const [type, setType] = useState<"drive" | "activity" | "accommodation">(stop.type);
   const [activityIcon, setActivityIcon] = useState<"hiking" | "food" | "sightseeing" | "camera" | "coffee">(stop.activityIcon || "hiking");
   const [notes, setNotes] = useState(stop.notes || "");
+  const [verifying, setVerifying] = useState(false);
+  const [verifiedPlace, setVerifiedPlace] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'warning'>('idle');
+  const [mapboxToken, setMapboxToken] = useState<string>("");
+
+  // Load Mapbox token
+  useState(() => {
+    const token = localStorage.getItem('mapbox_access_token');
+    if (token) {
+      setMapboxToken(token);
+    }
+  });
+
+  const handleVerifyLocation = async () => {
+    if (!location.trim() || !mapboxToken) {
+      if (!mapboxToken) {
+        toast.error("Mapbox token not found. Please view the map first to set it up.");
+      }
+      return;
+    }
+
+    setVerifying(true);
+    setVerificationStatus('idle');
+    setVerifiedPlace(null);
+
+    try {
+      const result = await geocodeLocation(location, mapboxToken);
+      
+      if (result) {
+        setVerifiedPlace(result.placeName);
+        
+        // Check if the geocoded country matches user's intent
+        const userProvidedCountry = location.includes(',') || location.split(/\s+/).length > 1;
+        if (!userProvidedCountry && result.placeName) {
+          setVerificationStatus('warning');
+        } else {
+          setVerificationStatus('success');
+        }
+      } else {
+        toast.error("Location not found. Try adding the country name (e.g., 'Malmö, Sweden')");
+        setVerificationStatus('idle');
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      toast.error("Failed to verify location");
+      setVerificationStatus('idle');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,15 +169,66 @@ const EditEventForm = ({ stop, onSave, onCancel }: EditEventFormProps) => {
         <Label htmlFor="edit-location" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
           Location
         </Label>
-        <Input
-          id="edit-location"
-          type="text"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="Enter location..."
-          required
-          className="h-9"
-        />
+        <div className="space-y-2">
+          <Input
+            id="edit-location"
+            type="text"
+            value={location}
+            onChange={(e) => {
+              setLocation(e.target.value);
+              setVerifiedPlace(null);
+              setVerificationStatus('idle');
+            }}
+            placeholder="Enter location (e.g., Malmö, Sweden)..."
+            required
+            className="h-9"
+          />
+          
+          <div className="flex items-start gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleVerifyLocation}
+              disabled={!location.trim() || verifying || !mapboxToken}
+              className="h-8 text-xs"
+            >
+              {verifying ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                <>
+                  <MapPin className="w-3 h-3 mr-1" />
+                  Verify Location
+                </>
+              )}
+            </Button>
+            
+            {verificationStatus !== 'idle' && verifiedPlace && (
+              <div className={`flex-1 flex items-start gap-1.5 p-2 rounded-md text-xs ${
+                verificationStatus === 'success' 
+                  ? 'bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20' 
+                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+              }`}>
+                {verificationStatus === 'success' ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium">Found: {verifiedPlace}</div>
+                  {verificationStatus === 'warning' && (
+                    <div className="text-[10px] mt-0.5 opacity-90">
+                      Add country name for accuracy (e.g., "{location}, Sweden")
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="mb-4">
