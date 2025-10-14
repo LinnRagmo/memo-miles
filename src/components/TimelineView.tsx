@@ -76,26 +76,21 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
     <div ref={setNodeRef} style={style}>
       <div
         ref={stopRef}
-        className={`relative flex gap-4 group cursor-pointer transition-all ${
+        className={`relative flex gap-4 group transition-all ${
           isHighlighted ? 'scale-[1.02]' : ''
-        } ${isDragging ? 'z-50' : ''}`}
+        } ${isDragging ? 'z-50 cursor-grabbing' : 'cursor-grab'}`}
         onClick={() => onStopClick?.(stop.id)}
+        {...attributes}
+        {...listeners}
       >
         {/* Timeline line */}
         {!isLast && (
           <div className="absolute left-5 top-12 w-0.5 h-[calc(100%+3rem)] -ml-px bg-border" />
         )}
         
-        {/* Drag Handle & Icon with Number */}
+        {/* Icon */}
         <div className="flex flex-col items-center gap-1">
-          <button
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <GripVertical className="w-4 h-4 text-muted-foreground" />
-          </button>
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
           <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full shadow-soft transition-all ${
             stop.type === 'drive' ? 'bg-primary text-primary-foreground' :
             stop.type === 'activity' ? 'bg-accent text-accent-foreground' :
@@ -112,29 +107,52 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
               ? 'border-primary shadow-medium ring-2 ring-primary/20' 
               : 'border-border group-hover:shadow-medium group-hover:border-primary/50'
           }`}>
-            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center shadow-sm font-bold text-sm">
+            {/* Number in bottom right corner */}
+            <div className="absolute bottom-2 right-2 text-muted-foreground/50 font-medium text-sm">
               {index + 1}
             </div>
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-primary">{stop.time || 'Time not set'}</span>
-                  {stop.type === 'drive' && (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
-                      Driving
-                    </span>
-                  )}
-                  {stop.type === 'activity' && (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
-                      Activity
-                    </span>
-                  )}
-                  {stop.type === 'accommodation' && (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-secondary/10 text-secondary">
-                      Accommodation
-                    </span>
-                  )}
-                </div>
+                {/* Time - only show if it exists */}
+                {stop.time && (
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium text-primary">{stop.time}</span>
+                    {stop.type === 'drive' && (
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                        Driving
+                      </span>
+                    )}
+                    {stop.type === 'activity' && (
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
+                        Activity
+                      </span>
+                    )}
+                    {stop.type === 'accommodation' && (
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-secondary/10 text-secondary">
+                        Accommodation
+                      </span>
+                    )}
+                  </div>
+                )}
+                {!stop.time && (
+                  <div className="flex items-center gap-2 mb-1">
+                    {stop.type === 'drive' && (
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                        Driving
+                      </span>
+                    )}
+                    {stop.type === 'activity' && (
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent">
+                        Activity
+                      </span>
+                    )}
+                    {stop.type === 'accommodation' && (
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-secondary/10 text-secondary">
+                        Accommodation
+                      </span>
+                    )}
+                  </div>
+                )}
                 <h4 className="font-semibold text-foreground mb-1">{stop.location}</h4>
                 {stop.type === 'drive' && (stop.drivingTime || stop.distance) && (
                   <div className="flex gap-3 mb-1">
@@ -150,7 +168,7 @@ const SortableStop = ({ stop, index, isLast, isHighlighted, onStopClick, onEditS
                   <p className="text-sm text-muted-foreground">{stop.notes}</p>
                 )}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 {stop.coordinates && (
                   <MapPin className={`w-4 h-4 flex-shrink-0 transition-colors ${
                     isHighlighted ? 'text-primary' : 'text-muted-foreground'
