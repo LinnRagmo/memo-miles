@@ -808,6 +808,25 @@ const Index = () => {
             trip={trip}
             isOpen={isTotalRouteOpen}
             onClose={() => setIsTotalRouteOpen(false)}
+            onCoordinatesGeocoded={(dayId, stopId, coordinates) => {
+              // Update the stop with geocoded coordinates
+              const updatedTrip = {
+                ...trip,
+                days: trip.days.map(day => {
+                  if (day.id === dayId) {
+                    return {
+                      ...day,
+                      stops: day.stops.map(stop =>
+                        stop.id === stopId ? { ...stop, coordinates } : stop
+                      )
+                    };
+                  }
+                  return day;
+                })
+              };
+              setTrip(updatedTrip);
+              saveTrip(updatedTrip);
+            }}
           />
         </div>
       </div>

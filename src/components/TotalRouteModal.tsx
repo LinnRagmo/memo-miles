@@ -7,14 +7,16 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { geocodeMultipleLocations } from "@/lib/geocoding";
 
 interface TotalRouteModalProps {
   trip: Trip;
   isOpen: boolean;
   onClose: () => void;
+  onCoordinatesGeocoded?: (dayId: string, stopId: string, coordinates: [number, number]) => void;
 }
 
-const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
+const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: TotalRouteModalProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
@@ -24,6 +26,8 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
   const [tokenInput, setTokenInput] = useState("");
   const [isMapLoading, setIsMapLoading] = useState(true);
   const [containerReady, setContainerReady] = useState(false);
+  const [geocodedStops, setGeocodedStops] = useState<Map<string, [number, number]>>(new Map());
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const { toast } = useToast();
 
   const handleTokenSubmit = () => {
@@ -53,6 +57,40 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
     }
   }, [isOpen, mapContainer.current]);
 
+  // Geocode stops without coordinates
+  useEffect(() => {
+    if (!isOpen || !mapboxToken || isGeocoding) return;
+
+    const stopsNeedingGeocode = trip.days.flatMap(day =>
+      day.stops
+        .filter(stop => !stop.coordinates && !geocodedStops.has(stop.id) && stop.location)
+        .map(stop => ({ ...stop, dayId: day.id }))
+    );
+
+    if (stopsNeedingGeocode.length === 0) return;
+
+    const geocodeStops = async () => {
+      setIsGeocoding(true);
+
+      const locationsToGeocode = stopsNeedingGeocode.map(stop => stop.location);
+      const results = await geocodeMultipleLocations(locationsToGeocode, mapboxToken);
+
+      const newGeocodedStops = new Map(geocodedStops);
+      stopsNeedingGeocode.forEach(stop => {
+        const result = results.get(stop.location);
+        if (result) {
+          newGeocodedStops.set(stop.id, result.coordinates);
+          onCoordinatesGeocoded?.(stop.dayId, stop.id, result.coordinates);
+        }
+      });
+
+      setGeocodedStops(newGeocodedStops);
+      setIsGeocoding(false);
+    };
+
+    geocodeStops();
+  }, [isOpen, mapboxToken, trip.days.length]);
+
   useEffect(() => {
     console.log('TotalRouteModal useEffect triggered:', { isOpen, containerReady, hasToken: !!mapboxToken });
     
@@ -62,12 +100,15 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
       return;
     }
 
-    // Get all stops with coordinates from all days
+    // Get all stops with coordinates from all days (including geocoded)
     const allStops = trip.days.flatMap(day => 
-      day.stops.filter(stop => stop.coordinates).map(stop => ({
-        ...stop,
-        date: day.date
-      }))
+      day.stops
+        .map(stop => ({
+          ...stop,
+          coordinates: stop.coordinates || geocodedStops.get(stop.id),
+          date: day.date
+        }))
+        .filter(stop => stop.coordinates)
     );
 
     console.log('All stops with coordinates:', allStops.length);
@@ -198,10 +239,15 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
       map.current = null;
       setIsMapLoading(false);
     };
-  }, [isOpen, containerReady, trip, mapboxToken]);
+  }, [isOpen, containerReady, trip, mapboxToken, geocodedStops.size]);
 
   const allStops = trip.days.flatMap(day => 
-    day.stops.filter(stop => stop.coordinates)
+    day.stops
+      .map(stop => ({
+        ...stop,
+        coordinates: stop.coordinates || geocodedStops.get(stop.id)
+      }))
+      .filter(stop => stop.coordinates)
   );
 
   return (
@@ -264,11 +310,15 @@ const TotalRouteModal = ({ trip, isOpen, onClose }: TotalRouteModalProps) => {
           ) : (
             <>
               <div ref={mapContainer} className="absolute inset-0" />
-              {isMapLoading && (
+              {(isGeocoding || isMapLoading) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Loading map...</p>
+                    {isGeocoding ? (
+                      <p className="text-sm text-muted-foreground">Geocoding locations...</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Loading map...</p>
+                    )}
                   </div>
                 </div>
               )}

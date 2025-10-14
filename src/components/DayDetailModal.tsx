@@ -219,6 +219,13 @@ const DayDetailModal = ({ day, isOpen, onClose, onAddEvent, onUpdateEvent, onDel
               stops={day.stops}
               onStopClick={handleStopClick}
               highlightedStopId={highlightedStopId}
+              onCoordinatesGeocoded={(stopId, coordinates) => {
+                // Update the stop with geocoded coordinates
+                const stop = day.stops.find(s => s.id === stopId);
+                if (stop) {
+                  onUpdateEvent(day.id, stopId, { ...stop, coordinates });
+                }
+              }}
             />
           </div>
         </div>

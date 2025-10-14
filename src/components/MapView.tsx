@@ -5,25 +5,71 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { MapPin, Navigation, Key } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { geocodeMultipleLocations } from "@/lib/geocoding";
 
 interface MapViewProps {
   stops: Stop[];
   onStopClick?: (stopId: string) => void;
   highlightedStopId?: string;
+  onCoordinatesGeocoded?: (stopId: string, coordinates: [number, number]) => void;
 }
 
-const MapView = ({ stops, onStopClick, highlightedStopId }: MapViewProps) => {
+const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const [mapboxToken, setMapboxToken] = useState<string>("");
   const [isMapInitialized, setIsMapInitialized] = useState(false);
+  const [geocodedStops, setGeocodedStops] = useState<Map<string, [number, number]>>(new Map());
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodingProgress, setGeocodingProgress] = useState({ completed: 0, total: 0 });
 
-  // Filter stops with coordinates
-  const validStops = stops.filter(stop => stop.coordinates);
+  // Combine stops with coordinates and geocoded coordinates
+  const allStopsWithCoordinates = stops.map(stop => ({
+    ...stop,
+    coordinates: stop.coordinates || geocodedStops.get(stop.id)
+  })).filter(stop => stop.coordinates);
+
+  const stopsNeedingGeocode = stops.filter(stop => 
+    !stop.coordinates && 
+    !geocodedStops.has(stop.id) && 
+    stop.location
+  );
+
+  // Geocode stops without coordinates
+  useEffect(() => {
+    if (!mapboxToken || stopsNeedingGeocode.length === 0 || isGeocoding) return;
+
+    const geocodeStops = async () => {
+      setIsGeocoding(true);
+      
+      const locationsToGeocode = stopsNeedingGeocode.map(stop => stop.location);
+      const results = await geocodeMultipleLocations(
+        locationsToGeocode, 
+        mapboxToken,
+        (completed, total) => setGeocodingProgress({ completed, total })
+      );
+
+      const newGeocodedStops = new Map(geocodedStops);
+      stopsNeedingGeocode.forEach(stop => {
+        const result = results.get(stop.location);
+        if (result) {
+          newGeocodedStops.set(stop.id, result.coordinates);
+          // Notify parent component about the geocoded coordinates
+          onCoordinatesGeocoded?.(stop.id, result.coordinates);
+        }
+      });
+
+      setGeocodedStops(newGeocodedStops);
+      setIsGeocoding(false);
+      setGeocodingProgress({ completed: 0, total: 0 });
+    };
+
+    geocodeStops();
+  }, [mapboxToken, stops.length]);
 
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken || validStops.length === 0) return;
+    if (!mapContainer.current || !mapboxToken || allStopsWithCoordinates.length === 0) return;
     if (map.current) return; // Initialize map only once
 
     mapboxgl.accessToken = mapboxToken;
@@ -31,7 +77,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId }: MapViewProps) => {
     try {
       // Calculate bounds
       const bounds = new mapboxgl.LngLatBounds();
-      validStops.forEach(stop => {
+      allStopsWithCoordinates.forEach(stop => {
         if (stop.coordinates) {
           bounds.extend(stop.coordinates as [number, number]);
         }
@@ -57,7 +103,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId }: MapViewProps) => {
         if (!map.current) return;
 
         // Add route line
-        const coordinates = validStops
+        const coordinates = allStopsWithCoordinates
           .filter(s => s.coordinates)
           .map(s => s.coordinates as [number, number]);
 
@@ -91,7 +137,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId }: MapViewProps) => {
         }
 
         // Add markers
-        validStops.forEach((stop, index) => {
+        allStopsWithCoordinates.forEach((stop, index) => {
           if (!stop.coordinates || !map.current) return;
 
           const el = document.createElement("div");
@@ -168,7 +214,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId }: MapViewProps) => {
       }
       markers.current = {};
     };
-  }, [mapboxToken, validStops.length]);
+  }, [mapboxToken, allStopsWithCoordinates.length, geocodedStops.size]);
 
   // Highlight marker when stop is selected
   useEffect(() => {
@@ -187,7 +233,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId }: MapViewProps) => {
     });
   }, [highlightedStopId]);
 
-  if (validStops.length === 0) {
+  if (stops.length === 0) {
     return (
       <div className="h-full w-full bg-gradient-to-br from-primary/5 via-accent/5 to-muted/20 flex items-center justify-center">
         <div className="bg-card/80 backdrop-blur-sm rounded-lg shadow-medium p-8 max-w-md text-center border border-border">
@@ -196,7 +242,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId }: MapViewProps) => {
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">No Locations Yet</h3>
           <p className="text-sm text-muted-foreground">
-            Add coordinates to your stops to see them on the map
+            Add stops to your trip to see them on the map
           </p>
         </div>
       </div>
@@ -257,11 +303,17 @@ const MapView = ({ stops, onStopClick, highlightedStopId }: MapViewProps) => {
   return (
     <div className="h-full w-full relative">
       <div ref={mapContainer} className="absolute inset-0" />
-      {!isMapInitialized && (
+      {(isGeocoding || !isMapInitialized) && (
         <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-sm text-muted-foreground">Loading map...</p>
+            {isGeocoding ? (
+              <p className="text-sm text-muted-foreground">
+                Geocoding locations... {geocodingProgress.completed} / {geocodingProgress.total}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading map...</p>
+            )}
           </div>
         </div>
       )}
