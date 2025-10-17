@@ -138,8 +138,9 @@ const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }
     <>
       <div
         ref={setNodeRef}
-        className={`flex-shrink-0 w-[320px] bg-card rounded-lg border-2 overflow-hidden transition-colors ${
-          isOver ? 'border-primary bg-primary/5' : 'border-border'
+        onClick={() => onDayClick(day)}
+        className={`flex-shrink-0 w-[320px] bg-card rounded-lg border-2 overflow-hidden transition-all cursor-pointer hover:shadow-lg hover:scale-[1.02] ${
+          isOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
         }`}
       >
         {/* Day Header */}
@@ -149,39 +150,34 @@ const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }
               e.stopPropagation();
               setShowDeleteDialog(true);
             }}
-            className="absolute top-2 right-2 hover:bg-background/20 rounded-full p-1 transition-colors"
+            className="absolute top-2 right-2 hover:bg-background/20 rounded-full p-1 transition-colors z-10"
           >
             <X className="w-4 h-4" />
           </button>
-          <div
-            onClick={() => onDayClick(day)}
-            className="cursor-pointer"
-          >
-            <div className="flex flex-col gap-2">
-              <span className="text-lg font-bold">
-                {day.date}
-              </span>
-          <span className="text-sm opacity-80">
-            Day {dayIndex + 1} • {day.stops.length} events
-          </span>
-          {/* Sunrise/Sunset Times */}
-          {(day.sunrise || day.sunset) && (
-            <div className="flex items-center gap-3 text-xs opacity-90 pt-1">
-              {day.sunrise && (
-                <div className="flex items-center gap-1.5">
-                  <Sunrise className="w-3.5 h-3.5" />
-                  <span>{day.sunrise}</span>
-                </div>
-              )}
-              {day.sunset && (
-                <div className="flex items-center gap-1.5">
-                  <Sunset className="w-3.5 h-3.5" />
-                  <span>{day.sunset}</span>
-                </div>
-              )}
-            </div>
-          )}
-            </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-lg font-bold">
+              {day.date}
+            </span>
+            <span className="text-sm opacity-80">
+              Day {dayIndex + 1} • {day.stops.length} events
+            </span>
+            {/* Sunrise/Sunset Times */}
+            {(day.sunrise || day.sunset) && (
+              <div className="flex items-center gap-3 text-xs opacity-90 pt-1">
+                {day.sunrise && (
+                  <div className="flex items-center gap-1.5">
+                    <Sunrise className="w-3.5 h-3.5" />
+                    <span>{day.sunrise}</span>
+                  </div>
+                )}
+                {day.sunset && (
+                  <div className="flex items-center gap-1.5">
+                    <Sunset className="w-3.5 h-3.5" />
+                    <span>{day.sunset}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
