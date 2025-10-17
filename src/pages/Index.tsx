@@ -662,6 +662,23 @@ const Index = () => {
     saveTrip(updatedTrip);
   };
 
+  const handleReorderDays = (oldIndex: number, newIndex: number) => {
+    if (!trip) return;
+
+    const newDays = [...trip.days];
+    const [movedDay] = newDays.splice(oldIndex, 1);
+    newDays.splice(newIndex, 0, movedDay);
+
+    const updatedTrip = {
+      ...trip,
+      days: newDays
+    };
+
+    setTrip(updatedTrip);
+    saveTrip(updatedTrip);
+    toast.success("Day reordered");
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -792,6 +809,7 @@ const Index = () => {
               onAddDay={handleAddDay}
               onRemoveDay={handleRemoveDay}
               onReorderStops={handleReorderStops}
+              onReorderDays={handleReorderDays}
             />
           </div>
 

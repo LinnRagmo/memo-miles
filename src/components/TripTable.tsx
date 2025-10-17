@@ -43,6 +43,7 @@ interface TripTableProps {
   onAddDay: (insertIndex: number) => void;
   onRemoveDay: (dayId: string) => void;
   onReorderStops: (dayId: string, oldIndex: number, newIndex: number) => void;
+  onReorderDays: (oldIndex: number, newIndex: number) => void;
 }
 
 const getEventIcon = (type: string) => {
@@ -119,7 +120,7 @@ const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
   );
 };
 
-interface DroppableDayProps {
+interface SortableDayProps {
   day: TripDay;
   dayIndex: number;
   onDayClick: (day: TripDay) => void;
@@ -127,24 +128,42 @@ interface DroppableDayProps {
   onReorderStops: (dayId: string, oldIndex: number, newIndex: number) => void;
 }
 
-const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }: DroppableDayProps) => {
-  const { setNodeRef, isOver } = useDroppable({
+const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }: SortableDayProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({
     id: day.id,
-    data: { day },
+    data: { type: 'day', day, dayIndex },
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   return (
     <>
       <div
         ref={setNodeRef}
-        onClick={() => onDayClick(day)}
-        className={`flex-shrink-0 w-[320px] bg-card rounded-lg border-2 overflow-hidden transition-all cursor-pointer hover:shadow-lg hover:scale-[1.02] ${
-          isOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-        }`}
+        style={style}
+        className={`flex-shrink-0 w-[320px] bg-card rounded-lg border-2 overflow-hidden transition-all ${
+          isDragging ? 'cursor-grabbing shadow-2xl' : 'cursor-grab'
+        } ${isOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:shadow-lg'}`}
       >
-        {/* Day Header */}
-        <div className="bg-foreground text-background px-4 py-4 border-b-2 border-border relative">
+        {/* Day Header - with drag handle */}
+        <div 
+          {...attributes}
+          {...listeners}
+          className="bg-foreground text-background px-4 py-4 border-b-2 border-border relative"
+        >
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -154,35 +173,41 @@ const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }
           >
             <X className="w-4 h-4" />
           </button>
-          <div className="flex flex-col gap-2">
-            <span className="text-lg font-bold">
-              {day.date}
-            </span>
-            <span className="text-sm opacity-80">
-              Day {dayIndex + 1} • {day.stops.length} events
-            </span>
-            {/* Sunrise/Sunset Times */}
-            {(day.sunrise || day.sunset) && (
-              <div className="flex items-center gap-3 text-xs opacity-90 pt-1">
-                {day.sunrise && (
-                  <div className="flex items-center gap-1.5">
-                    <Sunrise className="w-3.5 h-3.5" />
-                    <span>{day.sunrise}</span>
-                  </div>
-                )}
-                {day.sunset && (
-                  <div className="flex items-center gap-1.5">
-                    <Sunset className="w-3.5 h-3.5" />
-                    <span>{day.sunset}</span>
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="flex items-start gap-2">
+            <GripVertical className="w-5 h-5 mt-0.5 opacity-60" />
+            <div className="flex-1 flex flex-col gap-2">
+              <span className="text-lg font-bold">
+                {day.date}
+              </span>
+              <span className="text-sm opacity-80">
+                Day {dayIndex + 1} • {day.stops.length} events
+              </span>
+              {/* Sunrise/Sunset Times */}
+              {(day.sunrise || day.sunset) && (
+                <div className="flex items-center gap-3 text-xs opacity-90 pt-1">
+                  {day.sunrise && (
+                    <div className="flex items-center gap-1.5">
+                      <Sunrise className="w-3.5 h-3.5" />
+                      <span>{day.sunrise}</span>
+                    </div>
+                  )}
+                  {day.sunset && (
+                    <div className="flex items-center gap-1.5">
+                      <Sunset className="w-3.5 h-3.5" />
+                      <span>{day.sunset}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Events List */}
-        <div className="p-4 space-y-3 min-h-[200px]">
+        <div 
+          onClick={() => onDayClick(day)}
+          className="p-4 space-y-3 min-h-[200px] cursor-pointer hover:bg-muted/30 transition-colors"
+        >
           <SortableContext items={day.stops.map(s => s.id)} strategy={verticalListSortingStrategy}>
             {day.stops.map((stop) => (
               <DraggableStop key={stop.id} stop={stop} dayId={day.id} day={day} />
@@ -217,7 +242,7 @@ const DroppableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }
   );
 };
 
-const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, onRemoveDay, onReorderStops }: TripTableProps) => {
+const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, onRemoveDay, onReorderStops, onReorderDays }: TripTableProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeStop, setActiveStop] = useState<Stop | null>(null);
 
@@ -253,6 +278,17 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
     setActiveStop(null);
 
     if (!over || !active.data.current) return;
+
+    // Handle dragging days
+    if (active.data.current.type === 'day' && over.data.current?.type === 'day') {
+      const oldIndex = active.data.current.dayIndex;
+      const newIndex = over.data.current.dayIndex;
+      
+      if (oldIndex !== newIndex) {
+        onReorderDays(oldIndex, newIndex);
+      }
+      return;
+    }
 
     // Handle dragging from favorites
     if (active.data.current.type === 'favorite') {
@@ -417,26 +453,28 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
             <Plus className="w-4 h-4" />
           </Button>
 
-          {days.map((day, dayIndex) => (
-              <div key={day.id} className="inline-flex items-start gap-2">
-                <DroppableDay
-                  day={day}
-                  dayIndex={dayIndex}
-                  onDayClick={onDayClick}
-                  onRemoveDay={onRemoveDay}
-                  onReorderStops={onReorderStops}
-                />
-              {/* Add button after each day */}
-              <Button
-                variant="outline"
-                size="icon"
-                className="flex-shrink-0 w-8 h-8 mt-20"
-                onClick={() => onAddDay(dayIndex + 1)}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
+          <SortableContext items={days.map(d => d.id)} strategy={verticalListSortingStrategy}>
+            {days.map((day, dayIndex) => (
+                <div key={day.id} className="inline-flex items-start gap-2">
+                  <SortableDay
+                    day={day}
+                    dayIndex={dayIndex}
+                    onDayClick={onDayClick}
+                    onRemoveDay={onRemoveDay}
+                    onReorderStops={onReorderStops}
+                  />
+                {/* Add button after each day */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="flex-shrink-0 w-8 h-8 mt-20"
+                  onClick={() => onAddDay(dayIndex + 1)}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </SortableContext>
         </div>
       </div>
 
