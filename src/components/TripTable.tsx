@@ -455,26 +455,26 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
 
           <SortableContext items={days.map(d => d.id)} strategy={verticalListSortingStrategy}>
             {days.map((day, dayIndex) => (
-                <div key={day.id} className="inline-flex items-start gap-2">
-                  <SortableDay
-                    day={day}
-                    dayIndex={dayIndex}
-                    onDayClick={onDayClick}
-                    onRemoveDay={onRemoveDay}
-                    onReorderStops={onReorderStops}
-                  />
-                {/* Add button after each day */}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="flex-shrink-0 w-8 h-8 mt-20"
-                  onClick={() => onAddDay(dayIndex + 1)}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
+              <SortableDay
+                key={day.id}
+                day={day}
+                dayIndex={dayIndex}
+                onDayClick={onDayClick}
+                onRemoveDay={onRemoveDay}
+                onReorderStops={onReorderStops}
+              />
             ))}
           </SortableContext>
+
+          {/* Add button after last day */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="flex-shrink-0 w-8 h-8 mt-20"
+            onClick={() => onAddDay(days.length)}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 

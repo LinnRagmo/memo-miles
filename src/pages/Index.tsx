@@ -663,20 +663,27 @@ const Index = () => {
   };
 
   const handleReorderDays = (oldIndex: number, newIndex: number) => {
-    if (!trip) return;
+    if (!trip || !tripId) return;
 
     const newDays = [...trip.days];
     const [movedDay] = newDays.splice(oldIndex, 1);
     newDays.splice(newIndex, 0, movedDay);
 
+    // Recalculate dates for all days to maintain chronological order
+    const startDate = parseISO(format(new Date(trip.startDate), "yyyy-MM-dd"));
+    const updatedDaysWithDates = newDays.map((day, index) => ({
+      ...day,
+      date: format(addDays(startDate, index), "MMM d, yyyy")
+    }));
+
     const updatedTrip = {
       ...trip,
-      days: newDays
+      days: updatedDaysWithDates
     };
 
     setTrip(updatedTrip);
     saveTrip(updatedTrip);
-    toast.success("Day reordered");
+    toast.success("Day reordered and dates updated");
   };
 
   if (loading || authLoading) {
