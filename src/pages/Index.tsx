@@ -335,26 +335,43 @@ const Index = () => {
     const dayIndex = trip.days.findIndex(day => day.id === dayId);
     if (dayIndex === -1) return;
 
-    // Create a copy and remove the day
-    const updatedDays = trip.days.filter(day => day.id !== dayId);
-    
-    if (updatedDays.length === 0) {
+    if (trip.days.length === 1) {
       toast.error("Cannot remove the last day");
       return;
     }
 
-    // Shift all subsequent days back by one day
-    for (let i = dayIndex; i < updatedDays.length; i++) {
-      const currentDate = new Date(updatedDays[i].date);
-      updatedDays[i] = {
-        ...updatedDays[i],
-        date: format(addDays(currentDate, -1), "MMM d, yyyy")
-      };
-    }
+    // Remove the day
+    const updatedDays = trip.days.filter(day => day.id !== dayId);
 
-    // Calculate new start and end dates from the updated days array
-    const newStartDate = new Date(updatedDays[0].date);
-    const newEndDate = new Date(updatedDays[updatedDays.length - 1].date);
+    let newStartDate: Date;
+    let newEndDate: Date;
+
+    // Case 1: Removing the first day - shift trip forward (start date moves one day later)
+    if (dayIndex === 0) {
+      // Keep all remaining days with their original dates
+      // The new start date is the date of what was the second day
+      newStartDate = new Date(updatedDays[0].date);
+      newEndDate = new Date(updatedDays[updatedDays.length - 1].date);
+    }
+    // Case 2: Removing the last day - simply delete it
+    else if (dayIndex === trip.days.length - 1) {
+      newStartDate = new Date(updatedDays[0].date);
+      newEndDate = new Date(updatedDays[updatedDays.length - 1].date);
+    }
+    // Case 3: Removing a middle day - close the gap, adjust subsequent days
+    else {
+      // Shift all days after the removed day back by one day
+      for (let i = dayIndex; i < updatedDays.length; i++) {
+        const currentDate = new Date(updatedDays[i].date);
+        updatedDays[i] = {
+          ...updatedDays[i],
+          date: format(addDays(currentDate, -1), "MMM d, yyyy")
+        };
+      }
+      
+      newStartDate = new Date(updatedDays[0].date);
+      newEndDate = new Date(updatedDays[updatedDays.length - 1].date);
+    }
 
     const updatedTrip = {
       ...trip,
@@ -377,7 +394,7 @@ const Index = () => {
         .eq("id", tripId);
 
       if (error) throw error;
-      toast.success("Day removed");
+      toast.success("Day removed and dates adjusted");
     } catch (error: any) {
       toast.error("Failed to remove day");
     }
