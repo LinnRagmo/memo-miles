@@ -132,7 +132,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
           <Label htmlFor="type" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
             Type
           </Label>
-          <Select value={type} onValueChange={(value: "drive" | "activity" | "accommodation") => setType(value)}>
+          <Select value={type}   onValueChange={(value: "" | "drive" | "activity" | "accommodation") => setType(value)}
             <SelectTrigger className="h-9">
               <SelectValue placeholder="Choose type..." />
             </SelectTrigger>
