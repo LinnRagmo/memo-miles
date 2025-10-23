@@ -31,7 +31,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [location, setLocation] = useState("");
   const [startLocation, setStartLocation] = useState("");
   const [endLocation, setEndLocation] = useState("");
-  const [type, setType] = useState<"drive" | "activity" | "accommodation">("Choose type");
+  const [type, setType] = useState<"drive" | "activity" | "accommodation">("");
   const [activityIcon, setActivityIcon] = useState<"hiking" | "food" | "sightseeing" | "camera" | "coffee">("hiking");
   const [notes, setNotes] = useState("");
   const [calculating, setCalculating] = useState(false);
@@ -92,7 +92,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     setLocation("");
     setStartLocation("");
     setEndLocation("");
-    setType("Choose type");
+    setType("");
     setActivityIcon("hiking");
     setNotes("");
     setDrivingTime("");
@@ -134,7 +134,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
           </Label>
           <Select value={type} onValueChange={(value: "drive" | "activity" | "accommodation") => setType(value)}>
             <SelectTrigger className="h-9">
-              <SelectValue />
+              <SelectValue placeholder="Choose type..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="activity">Activity</SelectItem>
