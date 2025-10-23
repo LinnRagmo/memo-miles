@@ -42,6 +42,12 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate type is selected
+    if (!type) {
+      toast.error("Please select an event type");
+      return;
+    }
+
     // Validation based on type
     if (type === "drive") {
       if (!startLocation || !endLocation) {
@@ -49,7 +55,10 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
         return;
       }
     } else {
-      if (!location) return;
+      if (!location) {
+        toast.error("Please enter a location");
+        return;
+      }
     }
 
     let eventData: Omit<Stop, "id"> = {
