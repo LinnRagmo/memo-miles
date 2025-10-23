@@ -25,14 +25,9 @@ import {
   DragOverEvent,
   useDroppable,
   useDraggable,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-  arrayMove,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
 
 interface TripTableProps {
@@ -66,16 +61,9 @@ interface DraggableStopProps {
 }
 
 const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: stop.id,
-    data: { stop, dayId }
+    data: { stop, dayId },
   });
 
   const style = {
@@ -91,7 +79,7 @@ const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
       {...attributes}
       {...listeners}
       className={`bg-muted/50 rounded-md p-3 border border-border hover:bg-muted transition-colors ${
-        isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        isDragging ? "cursor-grabbing" : "cursor-grab"
       }`}
     >
       <div className="flex items-start gap-2">
@@ -107,12 +95,8 @@ const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
 
           {/* Event/Activity */}
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">
-              {getEventIcon(stop.type)}
-            </span>
-            <span className="text-sm font-medium text-foreground">
-              {stop.location}
-            </span>
+            <span className="text-muted-foreground">{getEventIcon(stop.type)}</span>
+            <span className="text-sm font-medium text-foreground">{stop.location}</span>
           </div>
         </div>
       </div>
@@ -129,17 +113,9 @@ interface SortableDayProps {
 }
 
 const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }: SortableDayProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-    isOver,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
     id: day.id,
-    data: { type: 'day', day, dayIndex },
+    data: { type: "day", day, dayIndex },
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -155,11 +131,11 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
         ref={setNodeRef}
         style={style}
         className={`flex-shrink-0 w-[320px] bg-card rounded-lg border-2 overflow-hidden transition-all ${
-          isDragging ? 'cursor-grabbing shadow-2xl' : 'cursor-grab'
-        } ${isOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:shadow-lg'}`}
+          isDragging ? "cursor-grabbing shadow-2xl" : "cursor-grab"
+        } ${isOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:shadow-lg"}`}
       >
         {/* Day Header - with drag handle */}
-        <div 
+        <div
           {...attributes}
           {...listeners}
           className="bg-foreground text-background px-4 py-4 border-b-2 border-border relative"
@@ -176,9 +152,7 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
           <div className="flex items-start gap-2">
             <GripVertical className="w-5 h-5 mt-0.5 opacity-60" />
             <div className="flex-1 flex flex-col gap-2">
-              <span className="text-lg font-bold">
-                {day.date}
-              </span>
+              <span className="text-lg font-bold">{day.date}</span>
               <span className="text-sm opacity-80">
                 Day {dayIndex + 1} • {day.stops.length} events
               </span>
@@ -204,19 +178,17 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
         </div>
 
         {/* Events List */}
-        <div 
+        <div
           onClick={() => onDayClick(day)}
           className="p-4 space-y-3 min-h-[200px] cursor-pointer hover:bg-muted/30 transition-colors"
         >
-          <SortableContext items={day.stops.map(s => s.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={day.stops.map((s) => s.id)} strategy={verticalListSortingStrategy}>
             {day.stops.map((stop) => (
               <DraggableStop key={stop.id} stop={stop} dayId={day.id} day={day} />
             ))}
           </SortableContext>
           {day.stops.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              Drop activities here
-            </div>
+            <div className="text-center py-8 text-muted-foreground text-sm">Click here to add activities</div>
           )}
         </div>
       </div>
@@ -226,15 +198,13 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Day {dayIndex + 1}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove Day {dayIndex + 1} ({day.date})? 
-              {day.stops.length > 0 && ` This will delete ${day.stops.length} event${day.stops.length > 1 ? 's' : ''}.`}
+              Are you sure you want to remove Day {dayIndex + 1} ({day.date})?
+              {day.stops.length > 0 && ` This will delete ${day.stops.length} event${day.stops.length > 1 ? "s" : ""}.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onRemoveDay(day.id)}>
-              Remove Day
-            </AlertDialogAction>
+            <AlertDialogAction onClick={() => onRemoveDay(day.id)}>Remove Day</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -242,26 +212,32 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
   );
 };
 
-const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, onRemoveDay, onReorderStops, onReorderDays }: TripTableProps) => {
+const TripTable = ({
+  days,
+  onDayClick,
+  onUpdateDay,
+  onMoveActivity,
+  onAddDay,
+  onRemoveDay,
+  onReorderStops,
+  onReorderDays,
+}: TripTableProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeStop, setActiveStop] = useState<Stop | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor)
-  );
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     setActiveId(active.id as string);
     if (active.data.current) {
-      if (active.data.current.type === 'favorite') {
+      if (active.data.current.type === "favorite") {
         // Create a temporary stop from favorite data
         setActiveStop({
-          id: 'temp',
-          time: '',
+          id: "temp",
+          time: "",
           location: active.data.current.location,
-          type: 'activity',
+          type: "activity",
           notes: active.data.current.notes,
           coordinates: active.data.current.coordinates,
         });
@@ -273,17 +249,17 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     setActiveId(null);
     setActiveStop(null);
 
     if (!over || !active.data.current) return;
 
     // Handle dragging days
-    if (active.data.current.type === 'day' && over.data.current?.type === 'day') {
+    if (active.data.current.type === "day" && over.data.current?.type === "day") {
       const oldIndex = active.data.current.dayIndex;
       const newIndex = over.data.current.dayIndex;
-      
+
       if (oldIndex !== newIndex) {
         onReorderDays(oldIndex, newIndex);
       }
@@ -291,14 +267,14 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
     }
 
     // Handle dragging from favorites
-    if (active.data.current.type === 'favorite') {
+    if (active.data.current.type === "favorite") {
       const toDayId = over.id as string;
-      const targetDay = days.find(d => d.id === toDayId);
-      
+      const targetDay = days.find((d) => d.id === toDayId);
+
       if (!targetDay) return;
 
       // Add the favorite as a new stop
-      onMoveActivity('favorites', toDayId, 'temp-favorite');
+      onMoveActivity("favorites", toDayId, "temp-favorite");
       toast.success("Favorite added to day");
       return;
     }
@@ -311,10 +287,10 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
     // If over.id is a day ID, use it. Otherwise, find the day containing the stop we're over
     let toDayId = over.id as string;
     let isOverStop = false;
-    
+
     // Check if we're over another stop
     for (const day of days) {
-      if (day.stops.some(s => s.id === over.id)) {
+      if (day.stops.some((s) => s.id === over.id)) {
         toDayId = day.id;
         isOverStop = true;
         break;
@@ -323,17 +299,17 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
 
     // Handle reordering within the same day
     if (fromDayId === toDayId) {
-      const day = days.find(d => d.id === fromDayId);
+      const day = days.find((d) => d.id === fromDayId);
       if (!day) return;
 
-      const oldIndex = day.stops.findIndex(s => s.id === stopId);
-      const newIndex = day.stops.findIndex(s => s.id === over.id);
-      
+      const oldIndex = day.stops.findIndex((s) => s.id === stopId);
+      const newIndex = day.stops.findIndex((s) => s.id === over.id);
+
       if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
         // Check if reordering would violate time constraints
         if (movingStop.time) {
           const movingTime = parseTimeToMinutes(movingStop.time);
-          
+
           // Check the stop that will be before the moved stop
           if (newIndex > 0) {
             const beforeStop = day.stops[newIndex - (newIndex > oldIndex ? 0 : 1)];
@@ -345,7 +321,7 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
               }
             }
           }
-          
+
           // Check the stop that will be after the moved stop
           if (newIndex < day.stops.length - 1) {
             const afterStop = day.stops[newIndex + (newIndex > oldIndex ? 1 : 0)];
@@ -358,7 +334,7 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
             }
           }
         }
-        
+
         onReorderStops(fromDayId, oldIndex, newIndex);
         toast.success("Activity reordered");
       }
@@ -367,8 +343,8 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
 
     // Handle moving between days
     if (fromDayId !== toDayId) {
-      const targetDay = days.find(d => d.id === toDayId);
-      
+      const targetDay = days.find((d) => d.id === toDayId);
+
       if (!targetDay) return;
 
       // If the activity has no time, allow the move
@@ -387,7 +363,7 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
 
       for (let i = 0; i < targetDay.stops.length; i++) {
         const stop = targetDay.stops[i];
-        
+
         if (!stop.time) {
           insertIndex = i + 1;
           continue;
@@ -419,7 +395,7 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
 
   // Helper function to parse time string to minutes since midnight
   const parseTimeToMinutes = (timeStr: string): number => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+    const [hours, minutes] = timeStr.split(":").map(Number);
     return hours * 60 + minutes;
   };
 
@@ -444,16 +420,11 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
       <div className="px-6 py-6">
         <div className="inline-flex items-start gap-2 pb-4">
           {/* Add button before first day */}
-          <Button
-            variant="outline"
-            size="icon"
-            className="flex-shrink-0 w-8 h-8 mt-20"
-            onClick={() => onAddDay(0)}
-          >
+          <Button variant="outline" size="icon" className="flex-shrink-0 w-8 h-8 mt-20" onClick={() => onAddDay(0)}>
             <Plus className="w-4 h-4" />
           </Button>
 
-          <SortableContext items={days.map(d => d.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={days.map((d) => d.id)} strategy={verticalListSortingStrategy}>
             {days.map((day, dayIndex) => (
               <SortableDay
                 key={day.id}
@@ -486,12 +457,8 @@ const TripTable = ({ days, onDayClick, onUpdateDay, onMoveActivity, onAddDay, on
               <span className="text-sm font-bold text-foreground">{activeStop.time}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">
-                {getEventIcon(activeStop.type)}
-              </span>
-              <span className="text-sm font-medium text-foreground">
-                {activeStop.location}
-              </span>
+              <span className="text-muted-foreground">{getEventIcon(activeStop.type)}</span>
+              <span className="text-sm font-medium text-foreground">{activeStop.location}</span>
             </div>
           </div>
         ) : null}
