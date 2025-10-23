@@ -31,7 +31,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [location, setLocation] = useState("");
   const [startLocation, setStartLocation] = useState("");
   const [endLocation, setEndLocation] = useState("");
-  const [type, setType] = useState<"drive" | "activity" | "accommodation">("");
+  const [type, setType] = useState<"drive" | "activity" | "accommodation">("Choose type");
   const [activityIcon, setActivityIcon] = useState<"hiking" | "food" | "sightseeing" | "camera" | "coffee">("hiking");
   const [notes, setNotes] = useState("");
   const [calculating, setCalculating] = useState(false);
@@ -92,7 +92,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     setLocation("");
     setStartLocation("");
     setEndLocation("");
-    setType("activity");
+    setType("Choose type");
     setActivityIcon("hiking");
     setNotes("");
     setDrivingTime("");
