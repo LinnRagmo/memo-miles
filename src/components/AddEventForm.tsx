@@ -92,7 +92,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     setLocation("");
     setStartLocation("");
     setEndLocation("");
-    setType("");
+    setType("activity");
     setActivityIcon("hiking");
     setNotes("");
     setDrivingTime("");
