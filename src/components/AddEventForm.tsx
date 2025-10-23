@@ -18,11 +18,11 @@ interface AddEventFormProps {
 }
 
 const activityIcons = [
-  { value: 'hiking', label: 'Hiking', icon: Mountain },
-  { value: 'food', label: 'Food/Dining', icon: Utensils },
-  { value: 'sightseeing', label: 'Sightseeing', icon: Eye },
-  { value: 'camera', label: 'Photography', icon: Camera },
-  { value: 'coffee', label: 'Coffee/Cafe', icon: Coffee },
+  { value: "hiking", label: "Hiking", icon: Mountain },
+  { value: "food", label: "Food/Dining", icon: Utensils },
+  { value: "sightseeing", label: "Sightseeing", icon: Eye },
+  { value: "camera", label: "Photography", icon: Camera },
+  { value: "coffee", label: "Coffee/Cafe", icon: Coffee },
 ] as const;
 
 const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
@@ -31,7 +31,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [location, setLocation] = useState("");
   const [startLocation, setStartLocation] = useState("");
   const [endLocation, setEndLocation] = useState("");
-  const [type, setType] = useState<"drive" | "activity" | "accommodation">("activity");
+  const [type, setType] = useState<"drive" | "activity" | "accommodation">("");
   const [activityIcon, setActivityIcon] = useState<"hiking" | "food" | "sightseeing" | "camera" | "coffee">("hiking");
   const [notes, setNotes] = useState("");
   const [calculating, setCalculating] = useState(false);
@@ -39,10 +39,9 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
   const [drivingTime, setDrivingTime] = useState("");
   const [distance, setDistance] = useState("");
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation based on type
     if (type === "drive") {
       if (!startLocation || !endLocation) {
@@ -66,7 +65,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     if (type === "drive") {
       const hardCodedDrivingTime = "3h 15 min";
       const hardCodedDistance = "2190 km";
-      
+
       eventData = {
         ...eventData,
         startLocation,
@@ -80,7 +79,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
 
     // For accommodation, if time is evening (after 6 PM), suggest next day morning
     if (type === "accommodation" && time) {
-      const [hours] = time.split(':').map(Number);
+      const [hours] = time.split(":").map(Number);
       if (hours >= 18) {
         eventData.time = "08:00";
       }
@@ -104,11 +103,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
     <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-4 mb-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Add New Event</h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="p-1 hover:bg-muted rounded transition-colors"
-        >
+        <button type="button" onClick={onCancel} className="p-1 hover:bg-muted rounded transition-colors">
           <X className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>
@@ -128,7 +123,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
           />
           {type === "accommodation" && time && (
             <p className="text-xs text-muted-foreground mt-1">
-              {parseInt(time.split(':')[0]) >= 18 ? "Will show as next morning" : "Check-in time"}
+              {parseInt(time.split(":")[0]) >= 18 ? "Will show as next morning" : "Check-in time"}
             </p>
           )}
         </div>
@@ -152,9 +147,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
 
       {type === "activity" && (
         <div className="mb-3">
-          <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
-            Activity Icon
-          </Label>
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">Activity Icon</Label>
           <div className="grid grid-cols-5 gap-2">
             {activityIcons.map(({ value, label, icon: Icon }) => (
               <button
@@ -163,13 +156,13 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
                 onClick={() => setActivityIcon(value)}
                 className={`flex flex-col items-center justify-center p-2 rounded-md border transition-all ${
                   activityIcon === value
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border hover:border-primary/50 hover:bg-muted'
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/50 hover:bg-muted"
                 }`}
                 title={label}
               >
                 <Icon className="w-5 h-5 mb-1" />
-                <span className="text-[10px] leading-tight text-center">{label.split('/')[0]}</span>
+                <span className="text-[10px] leading-tight text-center">{label.split("/")[0]}</span>
               </button>
             ))}
           </div>
@@ -179,7 +172,10 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
       {type === "drive" ? (
         <>
           <div className="mb-3">
-            <Label htmlFor="startLocation" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+            <Label
+              htmlFor="startLocation"
+              className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block"
+            >
               Start Location
             </Label>
             <Input
@@ -193,7 +189,10 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
             />
           </div>
           <div className="mb-3">
-            <Label htmlFor="endLocation" className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
+            <Label
+              htmlFor="endLocation"
+              className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block"
+            >
               End Location
             </Label>
             <Input
@@ -206,17 +205,13 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
               className="h-9"
             />
           </div>
-          
+
           {drivingTime && (
             <div className="p-3 bg-muted/50 rounded-md border border-border">
               <p className="text-sm text-foreground">
                 <span className="font-semibold">Driving Time:</span> {drivingTime}
               </p>
-              {distance && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Distance: {distance}
-                </p>
-              )}
+              {distance && <p className="text-sm text-muted-foreground mt-1">Distance: {distance}</p>}
             </div>
           )}
         </>
@@ -252,9 +247,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
                 </div>
                 <ScrollArea className="h-64">
                   {favorites.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      No favorite places yet
-                    </div>
+                    <div className="p-4 text-center text-sm text-muted-foreground">No favorite places yet</div>
                   ) : (
                     <div className="p-2">
                       {favorites.map((favorite) => (
@@ -268,12 +261,8 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
                           className="w-full text-left p-3 rounded-md hover:bg-muted transition-colors mb-1"
                         >
                           <div className="font-medium text-sm">{favorite.name}</div>
-                          <div className="text-xs text-muted-foreground line-clamp-1">
-                            {favorite.description}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            From: {favorite.tripTitle}
-                          </div>
+                          <div className="text-xs text-muted-foreground line-clamp-1">{favorite.description}</div>
+                          <div className="text-xs text-muted-foreground mt-1">From: {favorite.tripTitle}</div>
                         </button>
                       ))}
                     </div>
@@ -313,7 +302,13 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
             </>
           )}
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={calculating} className="h-9 px-4 font-bold uppercase text-xs tracking-wider">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={calculating}
+          className="h-9 px-4 font-bold uppercase text-xs tracking-wider"
+        >
           Cancel
         </Button>
       </div>
