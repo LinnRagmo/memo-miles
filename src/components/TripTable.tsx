@@ -159,8 +159,6 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
       >
         {/* Day Header - with drag handle */}
         <div
-          {...attributes}
-          {...listeners}
           className="bg-foreground text-background px-4 py-4 border-b-2 border-border relative"
         >
           <button
@@ -168,11 +166,15 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
               e.stopPropagation();
               setShowDeleteDialog(true);
             }}
-            className="absolute top-2 right-2 hover:bg-background/20 rounded-full p-1 transition-colors z-10"
+            className="absolute top-2 right-2 hover:bg-background/20 rounded-full p-1 transition-colors z-10 pointer-events-auto"
           >
             <X className="w-4 h-4" />
           </button>
-          <div className="flex items-start gap-2">
+          <div
+            {...attributes}
+            {...listeners}
+            className="flex items-start gap-2 cursor-grab active:cursor-grabbing"
+          >
             <GripVertical className="w-5 h-5 mt-0.5 opacity-60" />
             <div className="flex-1 flex flex-col gap-2">
               <span className="text-lg font-bold">{day.date}</span>
