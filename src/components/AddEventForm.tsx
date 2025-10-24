@@ -235,7 +235,7 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter location (e.g., Malmö, Sweden)..."
+              placeholder="Enter location or choose favorite"
               required
               className="h-9 pr-10"
             />
