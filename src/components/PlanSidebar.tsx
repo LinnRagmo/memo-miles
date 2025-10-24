@@ -42,14 +42,14 @@ const DraggableFavorite = ({ place, onRemove }: DraggableFavoriteProps) => {
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={`group relative p-3 hover:bg-muted/50 rounded-md transition-colors border border-border ${
         isDragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
     >
       <div className="flex items-start gap-3">
-        <button {...attributes} {...listeners} className="mt-1 touch-none">
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-        </button>
+        <GripVertical className="w-4 h-4 text-muted-foreground mt-1 flex-shrink-0" />
         
         <div className="flex-1 min-w-0 space-y-1">
           <h4 className="text-sm font-semibold text-foreground truncate">
@@ -67,7 +67,10 @@ const DraggableFavorite = ({ place, onRemove }: DraggableFavoriteProps) => {
           size="sm"
           variant="ghost"
           className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
-          onClick={() => onRemove(place.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(place.id);
+          }}
         >
           <Trash2 className="w-3 h-3" />
         </Button>

@@ -65,6 +65,16 @@ const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
     id: stop.id,
     data: { stop, dayId },
   });
+  const { isOver, setNodeRef: setDroppableRef } = useDroppable({
+    id: stop.id,
+    data: { stop, dayId },
+  });
+
+  // Combine refs for drag and drop
+  const combinedRef = (el: HTMLDivElement | null) => {
+    setNodeRef(el);
+    setDroppableRef(el);
+  };
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -74,13 +84,13 @@ const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
 
   return (
     <div
-      ref={setNodeRef}
+      ref={combinedRef}
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-muted/50 rounded-md p-3 border border-border hover:bg-muted transition-colors ${
-        isDragging ? "cursor-grabbing" : "cursor-grab"
-      }`}
+      className={`bg-muted/50 rounded-md p-3 border transition-colors ${
+        isDragging ? "cursor-grabbing border-primary" : "cursor-grab border-border hover:bg-muted"
+      } ${isOver ? "border-primary bg-primary/5" : ""}`}
     >
       <div className="flex items-start gap-2">
         <GripVertical className="w-4 h-4 text-muted-foreground mt-1" />
@@ -113,7 +123,11 @@ interface SortableDayProps {
 }
 
 const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }: SortableDayProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: day.id,
+    data: { type: "day", day, dayIndex },
+  });
+  const { isOver, setNodeRef: setDroppableRef } = useDroppable({
     id: day.id,
     data: { type: "day", day, dayIndex },
   });
@@ -125,10 +139,16 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // Combine refs for drag and drop
+  const combinedRef = (el: HTMLDivElement | null) => {
+    setNodeRef(el);
+    setDroppableRef(el);
+  };
+
   return (
     <>
       <div
-        ref={setNodeRef}
+        ref={combinedRef}
         style={style}
         className={`flex-shrink-0 w-[320px] bg-card rounded-lg border-2 overflow-hidden transition-all ${
           isDragging ? "cursor-grabbing shadow-2xl" : "cursor-grab"
@@ -268,13 +288,25 @@ const TripTable = ({
 
     // Handle dragging from favorites
     if (active.data.current.type === "favorite") {
-      const toDayId = over.id as string;
-      const targetDay = days.find((d) => d.id === toDayId);
+      // Determine the target day ID
+      let toDayId = over.id as string;
+      let targetIndex: number | undefined;
 
+      // Check if we're over a stop (to insert between items)
+      for (const day of days) {
+        const stopIndex = day.stops.findIndex((s) => s.id === over.id);
+        if (stopIndex !== -1) {
+          toDayId = day.id;
+          targetIndex = stopIndex;
+          break;
+        }
+      }
+
+      const targetDay = days.find((d) => d.id === toDayId);
       if (!targetDay) return;
 
       // Add the favorite as a new stop
-      onMoveActivity("favorites", toDayId, "temp-favorite");
+      onMoveActivity("favorites", toDayId, "temp-favorite", targetIndex);
       toast.success("Favorite added to day");
       return;
     }

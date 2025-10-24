@@ -741,9 +741,21 @@ const Index = () => {
 
         // Handle dragging from favorites
         if (active.data.current.type === 'favorite') {
-          const toDayId = over.id as string;
+          // Determine the target day ID and index
+          let toDayId = over.id as string;
+          let targetIndex: number | undefined;
+
+          // Check if we're over a stop (to insert between items)
+          for (const day of trip.days) {
+            const stopIndex = day.stops.findIndex((s) => s.id === over.id);
+            if (stopIndex !== -1) {
+              toDayId = day.id;
+              targetIndex = stopIndex;
+              break;
+            }
+          }
+
           const targetDay = trip?.days.find(d => d.id === toDayId);
-          
           if (!targetDay) return;
 
           const newStop: Omit<Stop, "id"> = {
@@ -754,7 +766,7 @@ const Index = () => {
             coordinates: active.data.current.coordinates,
           };
 
-          handleAddEvent(toDayId, newStop);
+          handleAddEvent(toDayId, newStop, targetIndex);
         }
       }}
     >
