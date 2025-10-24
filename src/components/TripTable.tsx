@@ -39,6 +39,8 @@ interface TripTableProps {
   onRemoveDay: (dayId: string) => void;
   onReorderStops: (dayId: string, oldIndex: number, newIndex: number) => void;
   onReorderDays: (oldIndex: number, newIndex: number) => void;
+  activeId?: string | null;
+  activeStop?: Stop | null;
 }
 
 const getEventIcon = (type: string) => {
@@ -241,196 +243,9 @@ const TripTable = ({
   onRemoveDay,
   onReorderStops,
   onReorderDays,
+  activeId,
+  activeStop,
 }: TripTableProps) => {
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeStop, setActiveStop] = useState<Stop | null>(null);
-
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
-
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    setActiveId(active.id as string);
-    if (active.data.current) {
-      if (active.data.current.type === "favorite") {
-        // Create a temporary stop from favorite data
-        setActiveStop({
-          id: "temp",
-          time: "",
-          location: active.data.current.location,
-          type: "activity",
-          notes: active.data.current.notes,
-          coordinates: active.data.current.coordinates,
-        });
-      } else {
-        setActiveStop(active.data.current.stop);
-      }
-    }
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    setActiveId(null);
-    setActiveStop(null);
-
-    if (!over || !active.data.current) return;
-
-    // Handle dragging days
-    if (active.data.current.type === "day" && over.data.current?.type === "day") {
-      const oldIndex = active.data.current.dayIndex;
-      const newIndex = over.data.current.dayIndex;
-
-      if (oldIndex !== newIndex) {
-        onReorderDays(oldIndex, newIndex);
-      }
-      return;
-    }
-
-    // Handle dragging from favorites
-    if (active.data.current.type === "favorite") {
-      // Determine the target day ID
-      let toDayId = over.id as string;
-      let targetIndex: number | undefined;
-
-      // Check if we're over a stop (to insert between items)
-      for (const day of days) {
-        const stopIndex = day.stops.findIndex((s) => s.id === over.id);
-        if (stopIndex !== -1) {
-          toDayId = day.id;
-          targetIndex = stopIndex;
-          break;
-        }
-      }
-
-      const targetDay = days.find((d) => d.id === toDayId);
-      if (!targetDay) return;
-
-      // Add the favorite as a new stop
-      onMoveActivity("favorites", toDayId, "temp-favorite", targetIndex);
-      toast.success("Favorite added to day");
-      return;
-    }
-
-    const fromDayId = active.data.current.dayId;
-    const stopId = active.data.current.stop.id;
-    const movingStop = active.data.current.stop as Stop;
-
-    // Determine the target day ID
-    // If over.id is a day ID, use it. Otherwise, find the day containing the stop we're over
-    let toDayId = over.id as string;
-    let isOverStop = false;
-
-    // Check if we're over another stop
-    for (const day of days) {
-      if (day.stops.some((s) => s.id === over.id)) {
-        toDayId = day.id;
-        isOverStop = true;
-        break;
-      }
-    }
-
-    // Handle reordering within the same day
-    if (fromDayId === toDayId) {
-      const day = days.find((d) => d.id === fromDayId);
-      if (!day) return;
-
-      const oldIndex = day.stops.findIndex((s) => s.id === stopId);
-      const newIndex = day.stops.findIndex((s) => s.id === over.id);
-
-      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        // Check if reordering would violate time constraints
-        if (movingStop.time) {
-          const movingTime = parseTimeToMinutes(movingStop.time);
-
-          // Check the stop that will be before the moved stop
-          if (newIndex > 0) {
-            const beforeStop = day.stops[newIndex - (newIndex > oldIndex ? 0 : 1)];
-            if (beforeStop.time) {
-              const beforeTime = parseTimeToMinutes(beforeStop.time);
-              if (movingTime < beforeTime) {
-                toast.error("Cannot reorder: time would be out of sequence");
-                return;
-              }
-            }
-          }
-
-          // Check the stop that will be after the moved stop
-          if (newIndex < day.stops.length - 1) {
-            const afterStop = day.stops[newIndex + (newIndex > oldIndex ? 1 : 0)];
-            if (afterStop.time) {
-              const afterTime = parseTimeToMinutes(afterStop.time);
-              if (movingTime > afterTime) {
-                toast.error("Cannot reorder: time would be out of sequence");
-                return;
-              }
-            }
-          }
-        }
-
-        onReorderStops(fromDayId, oldIndex, newIndex);
-        toast.success("Activity reordered");
-      }
-      return;
-    }
-
-    // Handle moving between days
-    if (fromDayId !== toDayId) {
-      const targetDay = days.find((d) => d.id === toDayId);
-
-      if (!targetDay) return;
-
-      // If the activity has no time, allow the move
-      if (!movingStop.time) {
-        onMoveActivity(fromDayId, toDayId, stopId);
-        toast.success("Activity moved to another day");
-        return;
-      }
-
-      // Parse the moving stop's time
-      const movingTime = parseTimeToMinutes(movingStop.time);
-
-      // Find the correct position in target day based on time
-      let insertIndex = 0;
-      let canInsert = true;
-
-      for (let i = 0; i < targetDay.stops.length; i++) {
-        const stop = targetDay.stops[i];
-
-        if (!stop.time) {
-          insertIndex = i + 1;
-          continue;
-        }
-
-        const stopTime = parseTimeToMinutes(stop.time);
-
-        // Check if times match exactly (conflict)
-        if (stopTime === movingTime) {
-          canInsert = false;
-          toast.error("Time conflict: An activity already exists at this time");
-          return;
-        }
-
-        // Find insertion point
-        if (stopTime < movingTime) {
-          insertIndex = i + 1;
-        } else {
-          break;
-        }
-      }
-
-      if (canInsert) {
-        onMoveActivity(fromDayId, toDayId, stopId, insertIndex);
-        toast.success("Activity moved and placed in chronological order");
-      }
-    }
-  };
-
-  // Helper function to parse time string to minutes since midnight
-  const parseTimeToMinutes = (timeStr: string): number => {
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    return hours * 60 + minutes;
-  };
-
   if (days.length === 0) {
     return (
       <div className="container mx-auto px-6 py-12">
@@ -443,42 +258,35 @@ const TripTable = ({
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="px-6 py-6">
-        <div className="inline-flex items-start gap-2 pb-4">
-          {/* Add button before first day */}
-          <Button variant="outline" size="icon" className="flex-shrink-0 w-8 h-8 mt-20" onClick={() => onAddDay(0)}>
-            <Plus className="w-4 h-4" />
-          </Button>
+    <div className="px-6 py-6">
+      <div className="inline-flex items-start gap-2 pb-4">
+        {/* Add button before first day */}
+        <Button variant="outline" size="icon" className="flex-shrink-0 w-8 h-8 mt-20" onClick={() => onAddDay(0)}>
+          <Plus className="w-4 h-4" />
+        </Button>
 
-          <SortableContext items={days.map((d) => d.id)} strategy={verticalListSortingStrategy}>
-            {days.map((day, dayIndex) => (
-              <SortableDay
-                key={day.id}
-                day={day}
-                dayIndex={dayIndex}
-                onDayClick={onDayClick}
-                onRemoveDay={onRemoveDay}
-                onReorderStops={onReorderStops}
-              />
-            ))}
-          </SortableContext>
+        <SortableContext items={days.map((d) => d.id)} strategy={verticalListSortingStrategy}>
+          {days.map((day, dayIndex) => (
+            <SortableDay
+              key={day.id}
+              day={day}
+              dayIndex={dayIndex}
+              onDayClick={onDayClick}
+              onRemoveDay={onRemoveDay}
+              onReorderStops={onReorderStops}
+            />
+          ))}
+        </SortableContext>
 
-          {/* Add button after last day */}
-          <Button
-            variant="outline"
-            size="icon"
-            className="flex-shrink-0 w-8 h-8 mt-20"
-            onClick={() => onAddDay(days.length)}
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        </div>
+        {/* Add button after last day */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="flex-shrink-0 w-8 h-8 mt-20"
+          onClick={() => onAddDay(days.length)}
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
       </div>
 
       <DragOverlay>
@@ -495,7 +303,7 @@ const TripTable = ({
           </div>
         ) : null}
       </DragOverlay>
-    </DndContext>
+    </div>
   );
 };
 

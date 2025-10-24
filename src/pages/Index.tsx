@@ -36,7 +36,9 @@ const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTotalRouteOpen, setIsTotalRouteOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
-  const [activeDragItem, setActiveDragItem] = useState<{ location: string; description: string } | null>(null);
+  const [activeDragItem, setActiveDragItem] = useState<{ location: string; description: string; type?: string } | null>(null);
+  const [activeStop, setActiveStop] = useState<Stop | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -724,11 +726,28 @@ const Index = () => {
       sensors={sensors}
       onDragStart={(event) => {
         const { active } = event;
+        setActiveId(active.id as string);
         
         if (active.data.current?.type === 'favorite') {
           setActiveDragItem({
             location: active.data.current.location,
             description: active.data.current.notes,
+            type: 'favorite'
+          });
+          setActiveStop({
+            id: "temp",
+            time: "",
+            location: active.data.current.location,
+            type: "activity",
+            notes: active.data.current.notes,
+            coordinates: active.data.current.coordinates,
+          });
+        } else if (active.data.current?.stop) {
+          setActiveStop(active.data.current.stop);
+          setActiveDragItem({
+            location: active.data.current.stop.location,
+            description: active.data.current.stop.notes || '',
+            type: 'stop'
           });
         }
       }}
@@ -736,8 +755,21 @@ const Index = () => {
         const { active, over } = event;
         
         setActiveDragItem(null);
+        setActiveStop(null);
+        setActiveId(null);
 
         if (!over || !active.data.current) return;
+
+        // Handle dragging days
+        if (active.data.current.type === "day" && over.data.current?.type === "day") {
+          const oldIndex = active.data.current.dayIndex;
+          const newIndex = over.data.current.dayIndex;
+
+          if (oldIndex !== newIndex) {
+            handleReorderDays(oldIndex, newIndex);
+          }
+          return;
+        }
 
         // Handle dragging from favorites
         if (active.data.current.type === 'favorite') {
@@ -746,12 +778,14 @@ const Index = () => {
           let targetIndex: number | undefined;
 
           // Check if we're over a stop (to insert between items)
-          for (const day of trip.days) {
-            const stopIndex = day.stops.findIndex((s) => s.id === over.id);
-            if (stopIndex !== -1) {
-              toDayId = day.id;
-              targetIndex = stopIndex;
-              break;
+          if (trip) {
+            for (const day of trip.days) {
+              const stopIndex = day.stops.findIndex((s) => s.id === over.id);
+              if (stopIndex !== -1) {
+                toDayId = day.id;
+                targetIndex = stopIndex;
+                break;
+              }
             }
           }
 
@@ -767,6 +801,134 @@ const Index = () => {
           };
 
           handleAddEvent(toDayId, newStop, targetIndex);
+          toast.success("Favorite added to day");
+          return;
+        }
+
+        // Handle dragging stops
+        if (active.data.current.stop) {
+          const fromDayId = active.data.current.dayId;
+          const stopId = active.data.current.stop.id;
+          const movingStop = active.data.current.stop as Stop;
+
+          // Determine the target day ID
+          let toDayId = over.id as string;
+          let isOverStop = false;
+
+          // Check if we're over another stop
+          if (trip) {
+            for (const day of trip.days) {
+              if (day.stops.some((s) => s.id === over.id)) {
+                toDayId = day.id;
+                isOverStop = true;
+                break;
+              }
+            }
+          }
+
+          // Handle reordering within the same day
+          if (fromDayId === toDayId && trip) {
+            const day = trip.days.find((d) => d.id === fromDayId);
+            if (!day) return;
+
+            const oldIndex = day.stops.findIndex((s) => s.id === stopId);
+            const newIndex = day.stops.findIndex((s) => s.id === over.id);
+
+            if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+              // Check if reordering would violate time constraints
+              if (movingStop.time) {
+                const parseTimeToMinutes = (timeStr: string): number => {
+                  const [hours, minutes] = timeStr.split(":").map(Number);
+                  return hours * 60 + minutes;
+                };
+                
+                const movingTime = parseTimeToMinutes(movingStop.time);
+
+                // Check the stop that will be before the moved stop
+                if (newIndex > 0) {
+                  const beforeStop = day.stops[newIndex - (newIndex > oldIndex ? 0 : 1)];
+                  if (beforeStop.time) {
+                    const beforeTime = parseTimeToMinutes(beforeStop.time);
+                    if (movingTime < beforeTime) {
+                      toast.error("Cannot reorder: time would be out of sequence");
+                      return;
+                    }
+                  }
+                }
+
+                // Check the stop that will be after the moved stop
+                if (newIndex < day.stops.length - 1) {
+                  const afterStop = day.stops[newIndex + (newIndex > oldIndex ? 1 : 0)];
+                  if (afterStop.time) {
+                    const afterTime = parseTimeToMinutes(afterStop.time);
+                    if (movingTime > afterTime) {
+                      toast.error("Cannot reorder: time would be out of sequence");
+                      return;
+                    }
+                  }
+                }
+              }
+
+              handleReorderStops(fromDayId, oldIndex, newIndex);
+              toast.success("Activity reordered");
+            }
+            return;
+          }
+
+          // Handle moving between days
+          if (fromDayId !== toDayId && trip) {
+            const targetDay = trip.days.find((d) => d.id === toDayId);
+            if (!targetDay) return;
+
+            // If the activity has no time, allow the move
+            if (!movingStop.time) {
+              handleMoveActivity(fromDayId, toDayId, stopId);
+              toast.success("Activity moved to another day");
+              return;
+            }
+
+            // Parse the moving stop's time
+            const parseTimeToMinutes = (timeStr: string): number => {
+              const [hours, minutes] = timeStr.split(":").map(Number);
+              return hours * 60 + minutes;
+            };
+            
+            const movingTime = parseTimeToMinutes(movingStop.time);
+
+            // Find the correct position in target day based on time
+            let insertIndex = 0;
+            let canInsert = true;
+
+            for (let i = 0; i < targetDay.stops.length; i++) {
+              const stop = targetDay.stops[i];
+
+              if (!stop.time) {
+                insertIndex = i + 1;
+                continue;
+              }
+
+              const stopTime = parseTimeToMinutes(stop.time);
+
+              // Check if times match exactly (conflict)
+              if (stopTime === movingTime) {
+                canInsert = false;
+                toast.error("Time conflict: An activity already exists at this time");
+                return;
+              }
+
+              // Find insertion point
+              if (stopTime < movingTime) {
+                insertIndex = i + 1;
+              } else {
+                break;
+              }
+            }
+
+            if (canInsert) {
+              handleMoveActivity(fromDayId, toDayId, stopId, insertIndex);
+              toast.success("Activity moved and placed in chronological order");
+            }
+          }
         }
       }}
     >
@@ -860,6 +1022,8 @@ const Index = () => {
               onRemoveDay={handleRemoveDay}
               onReorderStops={handleReorderStops}
               onReorderDays={handleReorderDays}
+              activeId={activeId}
+              activeStop={activeStop}
             />
           </div>
 
@@ -906,7 +1070,9 @@ const Index = () => {
               <MapPin className="w-4 h-4 text-primary" />
               <span className="text-sm font-semibold text-foreground">{activeDragItem.location}</span>
             </div>
-            <p className="text-xs text-muted-foreground line-clamp-2">{activeDragItem.description}</p>
+            {activeDragItem.description && (
+              <p className="text-xs text-muted-foreground line-clamp-2">{activeDragItem.description}</p>
+            )}
           </div>
         ) : null}
       </DragOverlay>
