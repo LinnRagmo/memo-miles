@@ -384,7 +384,9 @@ const Index = () => {
       days: updatedDays
     };
     
+    // Update state and force re-render
     setTrip(updatedTrip);
+    setRenderKey(prev => prev + 1);
 
     // Save to database with updated dates
     try {
