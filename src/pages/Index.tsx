@@ -469,8 +469,8 @@ const Index = () => {
       id: `stop-${Date.now()}`,
     };
 
-    // Force immediate state update with completely new object
-    const newTrip = JSON.parse(JSON.stringify({
+    // Create new trip with updated stops
+    const newTrip = {
       ...trip,
       days: trip.days.map(day => {
         if (day.id === dayId) {
@@ -502,13 +502,13 @@ const Index = () => {
         }
         return day;
       })
-    }));
+    };
     
-    // Force re-render with new reference
+    // Update state immediately
     setTrip(newTrip);
     
-    // Save to database asynchronously
-    setTimeout(() => saveTrip(newTrip), 0);
+    // Save to database
+    saveTrip(newTrip);
 
     // Update selectedDay to reflect the new stop immediately
     if (selectedDay && selectedDay.id === dayId) {
@@ -642,8 +642,8 @@ const Index = () => {
     
     if (!stopToMove) return;
 
-    // Create completely new object with deep copy
-    const newTrip = JSON.parse(JSON.stringify({
+    // Create new trip with moved stop
+    const newTrip = {
       ...trip,
       days: trip.days.map(day => {
         if (day.id === fromDayId) {
@@ -660,13 +660,13 @@ const Index = () => {
         }
         return day;
       })
-    }));
+    };
 
-    // Force immediate re-render
+    // Update state immediately
     setTrip(newTrip);
     
-    // Save to database asynchronously
-    setTimeout(() => saveTrip(newTrip), 0);
+    // Save to database
+    saveTrip(newTrip);
   };
 
   const handleReorderStops = (dayId: string, oldIndex: number, newIndex: number) => {

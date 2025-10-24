@@ -208,11 +208,10 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
           <SortableContext 
             items={day.stops.map((s) => s.id)} 
             strategy={verticalListSortingStrategy}
-            key={`sortable-${day.id}-${day.stops.length}`}
           >
             {day.stops.map((stop) => (
               <DraggableStop 
-                key={`${stop.id}-${day.id}`}
+                key={stop.id}
                 stop={stop} 
                 dayId={day.id} 
                 day={day}
@@ -276,10 +275,13 @@ const TripTable = ({
           <Plus className="w-4 h-4" />
         </Button>
 
-        <SortableContext items={days.map((d) => d.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext 
+          items={days.map((d) => d.id)} 
+          strategy={verticalListSortingStrategy}
+        >
           {days.map((day, dayIndex) => (
             <SortableDay
-              key={`${day.id}-${day.stops.length}`}
+              key={day.id}
               day={day}
               dayIndex={dayIndex}
               onDayClick={onDayClick}
