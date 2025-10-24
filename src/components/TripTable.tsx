@@ -205,20 +205,20 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
           onClick={() => onDayClick(day)}
           className="p-4 space-y-3 min-h-[200px] cursor-pointer hover:bg-muted/30 transition-colors"
         >
-          <SortableContext items={day.stops.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-            {day.stops.map((stop, index) => {
-              // Check if this stop is being hovered over during drag
-              const stopIsOver = false; // Will be determined by drag state in parent
-              return (
-                <DraggableStop 
-                  key={stop.id} 
-                  stop={stop} 
-                  dayId={day.id} 
-                  day={day}
-                  isOver={stopIsOver}
-                />
-              );
-            })}
+          <SortableContext 
+            items={day.stops.map((s) => s.id)} 
+            strategy={verticalListSortingStrategy}
+            key={`sortable-${day.id}-${day.stops.length}`}
+          >
+            {day.stops.map((stop) => (
+              <DraggableStop 
+                key={`${stop.id}-${day.id}`}
+                stop={stop} 
+                dayId={day.id} 
+                day={day}
+                isOver={false}
+              />
+            ))}
           </SortableContext>
           {day.stops.length === 0 && (
             <div className="text-center py-8 text-muted-foreground text-sm">Click here to add activities</div>

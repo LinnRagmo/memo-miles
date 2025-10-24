@@ -469,8 +469,8 @@ const Index = () => {
       id: `stop-${Date.now()}`,
     };
 
-    // Force immediate state update with a new reference
-    const newTrip = {
+    // Force immediate state update with completely new object
+    const newTrip = JSON.parse(JSON.stringify({
       ...trip,
       days: trip.days.map(day => {
         if (day.id === dayId) {
@@ -502,9 +502,9 @@ const Index = () => {
         }
         return day;
       })
-    };
+    }));
     
-    // Force immediate re-render
+    // Force re-render with new reference
     setTrip(newTrip);
     
     // Save to database asynchronously
@@ -642,8 +642,8 @@ const Index = () => {
     
     if (!stopToMove) return;
 
-    // Remove from old day and add to new day at specific index
-    const newTrip = {
+    // Create completely new object with deep copy
+    const newTrip = JSON.parse(JSON.stringify({
       ...trip,
       days: trip.days.map(day => {
         if (day.id === fromDayId) {
@@ -660,7 +660,7 @@ const Index = () => {
         }
         return day;
       })
-    };
+    }));
 
     // Force immediate re-render
     setTrip(newTrip);
