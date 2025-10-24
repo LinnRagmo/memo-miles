@@ -469,7 +469,8 @@ const Index = () => {
       id: `stop-${Date.now()}`,
     };
 
-    const updatedTrip = {
+    // Force immediate state update with a new reference
+    const newTrip = {
       ...trip,
       days: trip.days.map(day => {
         if (day.id === dayId) {
@@ -503,20 +504,19 @@ const Index = () => {
       })
     };
     
-    // Force immediate state update
-    setTrip(updatedTrip);
+    // Force immediate re-render
+    setTrip(newTrip);
     
     // Save to database asynchronously
-    saveTrip(updatedTrip);
+    setTimeout(() => saveTrip(newTrip), 0);
 
-    // Update selectedDay to reflect the new stop
-    setSelectedDay(prev => {
-      if (prev && prev.id === dayId) {
-        const day = updatedTrip.days.find(d => d.id === dayId);
-        return day || prev;
+    // Update selectedDay to reflect the new stop immediately
+    if (selectedDay && selectedDay.id === dayId) {
+      const updatedDay = newTrip.days.find(d => d.id === dayId);
+      if (updatedDay) {
+        setSelectedDay(updatedDay);
       }
-      return prev;
-    });
+    }
 
     toast.success("Event added successfully!");
   };
@@ -643,7 +643,7 @@ const Index = () => {
     if (!stopToMove) return;
 
     // Remove from old day and add to new day at specific index
-    const updatedTrip = {
+    const newTrip = {
       ...trip,
       days: trip.days.map(day => {
         if (day.id === fromDayId) {
@@ -662,8 +662,11 @@ const Index = () => {
       })
     };
 
-    setTrip(updatedTrip);
-    saveTrip(updatedTrip);
+    // Force immediate re-render
+    setTrip(newTrip);
+    
+    // Save to database asynchronously
+    setTimeout(() => saveTrip(newTrip), 0);
   };
 
   const handleReorderStops = (dayId: string, oldIndex: number, newIndex: number) => {

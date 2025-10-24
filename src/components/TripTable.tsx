@@ -279,7 +279,7 @@ const TripTable = ({
         <SortableContext items={days.map((d) => d.id)} strategy={verticalListSortingStrategy}>
           {days.map((day, dayIndex) => (
             <SortableDay
-              key={day.id}
+              key={`${day.id}-${day.stops.length}`}
               day={day}
               dayIndex={dayIndex}
               onDayClick={onDayClick}
