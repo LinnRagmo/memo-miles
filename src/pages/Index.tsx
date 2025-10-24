@@ -35,7 +35,7 @@ const Index = () => {
   const [selectedDay, setSelectedDay] = useState<TripDay | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTotalRouteOpen, setIsTotalRouteOpen] = useState(false);
-  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(true);
   const [activeDragItem, setActiveDragItem] = useState<{ location: string; description: string } | null>(null);
 
   const sensors = useSensors(
@@ -759,7 +759,12 @@ const Index = () => {
       }}
     >
       <div className="min-h-screen flex w-full bg-gradient-subtle">
-        {isFavoritesOpen && <PlanSidebar onAddToDay={handleAddFavoriteToDay} onClose={() => setIsFavoritesOpen(false)} />}
+        {isFavoritesOpen && (
+          <PlanSidebar 
+            onAddToDay={handleAddFavoriteToDay} 
+            onClose={() => setIsFavoritesOpen(false)} 
+          />
+        )}
         
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex items-center gap-2 px-6 py-4 border-b border-border bg-card shadow-soft">
