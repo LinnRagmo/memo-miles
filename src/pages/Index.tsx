@@ -39,6 +39,7 @@ const Index = () => {
   const [activeDragItem, setActiveDragItem] = useState<{ location: string; description: string; type?: string } | null>(null);
   const [activeStop, setActiveStop] = useState<Stop | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -501,7 +502,11 @@ const Index = () => {
         return day;
       })
     };
+    
+    // Force immediate state update
     setTrip(updatedTrip);
+    
+    // Save to database asynchronously
     saveTrip(updatedTrip);
 
     // Update selectedDay to reflect the new stop
@@ -751,12 +756,17 @@ const Index = () => {
           });
         }
       }}
+      onDragOver={(event) => {
+        const { over } = event;
+        setOverId(over?.id as string | null);
+      }}
       onDragEnd={(event) => {
         const { active, over } = event;
         
         setActiveDragItem(null);
         setActiveStop(null);
         setActiveId(null);
+        setOverId(null);
 
         if (!over || !active.data.current) return;
 

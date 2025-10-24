@@ -60,14 +60,15 @@ interface DraggableStopProps {
   stop: Stop;
   dayId: string;
   day: TripDay;
+  isOver?: boolean;
 }
 
-const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
+const DraggableStop = ({ stop, dayId, day, isOver }: DraggableStopProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: stop.id,
     data: { stop, dayId },
   });
-  const { isOver, setNodeRef: setDroppableRef } = useDroppable({
+  const { isOver: isDropTarget, setNodeRef: setDroppableRef } = useDroppable({
     id: stop.id,
     data: { stop, dayId },
   });
@@ -92,7 +93,7 @@ const DraggableStop = ({ stop, dayId, day }: DraggableStopProps) => {
       {...listeners}
       className={`bg-muted/50 rounded-md p-3 border transition-colors ${
         isDragging ? "cursor-grabbing border-primary" : "cursor-grab border-border hover:bg-muted"
-      } ${isOver ? "border-primary bg-primary/5" : ""}`}
+      } ${isDropTarget || isOver ? "border-primary border-t-4 bg-primary/10" : ""}`}
     >
       <div className="flex items-start gap-2">
         <GripVertical className="w-4 h-4 text-muted-foreground mt-1" />
@@ -205,9 +206,19 @@ const SortableDay = ({ day, dayIndex, onDayClick, onRemoveDay, onReorderStops }:
           className="p-4 space-y-3 min-h-[200px] cursor-pointer hover:bg-muted/30 transition-colors"
         >
           <SortableContext items={day.stops.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-            {day.stops.map((stop) => (
-              <DraggableStop key={stop.id} stop={stop} dayId={day.id} day={day} />
-            ))}
+            {day.stops.map((stop, index) => {
+              // Check if this stop is being hovered over during drag
+              const stopIsOver = false; // Will be determined by drag state in parent
+              return (
+                <DraggableStop 
+                  key={stop.id} 
+                  stop={stop} 
+                  dayId={day.id} 
+                  day={day}
+                  isOver={stopIsOver}
+                />
+              );
+            })}
           </SortableContext>
           {day.stops.length === 0 && (
             <div className="text-center py-8 text-muted-foreground text-sm">Click here to add activities</div>
