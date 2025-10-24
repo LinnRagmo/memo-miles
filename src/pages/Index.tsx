@@ -40,6 +40,7 @@ const Index = () => {
   const [activeStop, setActiveStop] = useState<Stop | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [renderKey, setRenderKey] = useState(0);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -504,8 +505,9 @@ const Index = () => {
       })
     };
     
-    // Update state immediately
+    // Update state immediately and force re-render
     setTrip(newTrip);
+    setRenderKey(prev => prev + 1);
     
     // Save to database
     saveTrip(newTrip);
@@ -662,8 +664,9 @@ const Index = () => {
       })
     };
 
-    // Update state immediately
+    // Update state immediately and force re-render
     setTrip(newTrip);
+    setRenderKey(prev => prev + 1);
     
     // Save to database
     saveTrip(newTrip);
@@ -1027,6 +1030,7 @@ const Index = () => {
           
           <div className="flex-1 overflow-x-auto overflow-y-hidden">
             <TripTable
+              key={renderKey}
               days={trip.days}
               onDayClick={handleDayClick}
               onUpdateDay={handleUpdateDay}
