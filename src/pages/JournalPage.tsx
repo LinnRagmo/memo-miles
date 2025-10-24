@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, ArrowLeft, Calendar as CalendarIcon, MapPin, Camera, Heart, Star, Plane, Coffee, Mountain, Palmtree, Sun } from "lucide-react";
+import { Plus, Trash2, Pencil, ArrowLeft, Calendar as CalendarIcon, MapPin, Camera, Heart, Star, Plane, Coffee, Mountain, Palmtree, Sun } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import PhotoAlbumView from "@/components/PhotoAlbumView";
@@ -32,6 +32,7 @@ const JournalPage = () => {
   const { tripId } = useParams();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [tripInfo, setTripInfo] = useState<{ title: string; start_date: string; end_date: string } | null>(null);
   const [fullTripData, setFullTripData] = useState<Trip | null>(null);
@@ -207,20 +208,35 @@ const JournalPage = () => {
       return;
     }
 
-    const entry: JournalEntry = {
-      id: Date.now().toString(),
-      date: currentTemplate?.date || new Date().toISOString(),
-      title,
-      sections,
-    };
+    let updatedEntries: JournalEntry[];
+    
+    if (editingEntry) {
+      // Update existing entry
+      const updatedEntry: JournalEntry = {
+        ...editingEntry,
+        title,
+        sections,
+      };
+      updatedEntries = entries.map(e => e.id === editingEntry.id ? updatedEntry : e);
+    } else {
+      // Create new entry
+      const entry: JournalEntry = {
+        id: Date.now().toString(),
+        date: currentTemplate?.date || new Date().toISOString(),
+        title,
+        sections,
+      };
+      updatedEntries = [entry, ...entries];
+    }
 
-    setEntries([entry, ...entries]);
+    setEntries(updatedEntries);
     setIsCreating(false);
+    setEditingEntry(null);
     setCurrentTemplate(null);
 
     // Save to localStorage
     try {
-      localStorage.setItem(`journal-entries-${tripId}`, JSON.stringify([entry, ...entries]));
+      localStorage.setItem(`journal-entries-${tripId}`, JSON.stringify(updatedEntries));
     } catch (error) {
       if (error instanceof DOMException && error.name === 'QuotaExceededError') {
         toast({
@@ -233,8 +249,8 @@ const JournalPage = () => {
     }
 
     toast({
-      title: "Entry saved",
-      description: "Your journal entry has been added.",
+      title: editingEntry ? "Entry updated" : "Entry saved",
+      description: editingEntry ? "Your journal entry has been updated." : "Your journal entry has been added.",
     });
   };
 
@@ -297,7 +313,7 @@ const JournalPage = () => {
                 </p>
               )}
             </div>
-            {!isCreating && (
+            {!isCreating && !editingEntry && (
               <Button onClick={handleOpenCreateForm} size="lg" className="gap-2 shadow-lg">
                 <Plus className="w-4 h-4" />
                 New Entry
@@ -306,7 +322,7 @@ const JournalPage = () => {
           </div>
         </div>
 
-        {/* Create New Entry - Scrapbook Style */}
+        {/* Create/Edit Entry - Scrapbook Style */}
         {isCreating && currentTemplate && (
           <div className="mb-12">
             <ScrapbookEntry
@@ -317,6 +333,20 @@ const JournalPage = () => {
               onCancel={() => {
                 setIsCreating(false);
                 setCurrentTemplate(null);
+              }}
+            />
+          </div>
+        )}
+        
+        {editingEntry && (
+          <div className="mb-12">
+            <ScrapbookEntry
+              title={editingEntry.title}
+              date={editingEntry.date}
+              sections={editingEntry.sections}
+              onSave={handleSaveEntry}
+              onCancel={() => {
+                setEditingEntry(null);
               }}
             />
           </div>
@@ -358,18 +388,31 @@ const JournalPage = () => {
                     <div className="absolute top-0 left-1/4 w-20 h-6 bg-yellow-100/50 -rotate-1 shadow-sm z-10" 
                       style={{ clipPath: "polygon(0 0, 100% 0, 98% 100%, 2% 100%)" }} />
                     
-                    {/* Delete Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteEntry(entry.id);
-                      }}
-                      className="absolute top-4 right-4 z-20 bg-destructive/10 hover:bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {/* Action Buttons */}
+                    <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingEntry(entry);
+                        }}
+                        className="bg-primary/10 hover:bg-primary text-primary-foreground"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteEntry(entry.id);
+                        }}
+                        className="bg-destructive/10 hover:bg-destructive text-destructive-foreground"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
 
                     <CardContent className="p-8 md:p-12">
                       {/* Title and Date */}
