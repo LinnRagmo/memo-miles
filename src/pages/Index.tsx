@@ -704,6 +704,7 @@ const Index = () => {
     };
 
     setTrip(updatedTrip);
+    setRenderKey(prev => prev + 1);
     saveTrip(updatedTrip);
   };
 
