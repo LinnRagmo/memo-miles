@@ -650,6 +650,19 @@ const Index = () => {
     const newTrip = {
       ...trip,
       days: trip.days.map(day => {
+        // Handle move within the same day
+        if (day.id === fromDayId && fromDayId === toDayId) {
+          const currentIndex = day.stops.findIndex(s => s.id === stopId);
+          const newStops = [...day.stops];
+          newStops.splice(currentIndex, 1); // Remove from current position
+          if (targetIndex !== undefined) {
+            newStops.splice(targetIndex, 0, stopToMove); // Insert at target position
+          } else {
+            newStops.push(stopToMove);
+          }
+          return { ...day, stops: newStops };
+        }
+        // Handle move between different days
         if (day.id === fromDayId) {
           return { ...day, stops: day.stops.filter(s => s.id !== stopId) };
         }
