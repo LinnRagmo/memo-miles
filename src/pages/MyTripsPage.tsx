@@ -39,10 +39,24 @@ const defaultTripImages = [
   tripForestImg,
 ];
 
+const imageMap: Record<string, string> = {
+  coastal: tripCoastalImg,
+  mountain: tripMountainImg,
+  desert: tripDesertImg,
+  forest: tripForestImg,
+};
+
 const getDefaultImage = (tripId: string) => {
   // Use trip ID to consistently pick the same image for each trip
   const hash = tripId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return defaultTripImages[hash % defaultTripImages.length];
+};
+
+const getCoverImage = (trip: Trip) => {
+  if (trip.cover_image && imageMap[trip.cover_image]) {
+    return imageMap[trip.cover_image];
+  }
+  return getDefaultImage(trip.id);
 };
 
 const MyTripsPage = () => {
@@ -150,7 +164,7 @@ const MyTripsPage = () => {
               >
                 <div className="relative h-40 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
                   <img
-                    src={trip.cover_image || getDefaultImage(trip.id)}
+                    src={getCoverImage(trip)}
                     alt={trip.title}
                     className="w-full h-full object-cover"
                   />
