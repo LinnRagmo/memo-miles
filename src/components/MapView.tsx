@@ -18,24 +18,25 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<{ [key: string]: mapboxgl.Marker }>({});
-  const [mapboxToken, setMapboxToken] = useState<string>("");
+  const [mapboxToken, setMapboxToken] =
+    "pk.eyJ1IjoicmFnbW8iLCJhIjoiY21nd3JrN2tkMHo0cDJ3czI1MXltazlsYSJ9.hCT3yZkOlcRJgSMterBA6w";
   const [isMapInitialized, setIsMapInitialized] = useState(false);
   const [geocodedStops, setGeocodedStops] = useState<Map<string, [number, number]>>(new Map());
-  const [geocodedDriveRoutes, setGeocodedDriveRoutes] = useState<Map<string, { start: [number, number], end: [number, number] }>>(new Map());
+  const [geocodedDriveRoutes, setGeocodedDriveRoutes] = useState<
+    Map<string, { start: [number, number]; end: [number, number] }>
+  >(new Map());
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodingProgress, setGeocodingProgress] = useState({ completed: 0, total: 0 });
 
   // Combine stops with coordinates and geocoded coordinates
-  const allStopsWithCoordinates = stops.map(stop => ({
-    ...stop,
-    coordinates: stop.coordinates || geocodedStops.get(stop.id)
-  })).filter(stop => stop.coordinates);
+  const allStopsWithCoordinates = stops
+    .map((stop) => ({
+      ...stop,
+      coordinates: stop.coordinates || geocodedStops.get(stop.id),
+    }))
+    .filter((stop) => stop.coordinates);
 
-  const stopsNeedingGeocode = stops.filter(stop => 
-    !stop.coordinates && 
-    !geocodedStops.has(stop.id) && 
-    stop.location
-  );
+  const stopsNeedingGeocode = stops.filter((stop) => !stop.coordinates && !geocodedStops.has(stop.id) && stop.location);
 
   // Geocode stops without coordinates
   useEffect(() => {
@@ -43,38 +44,35 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
 
     const geocodeStops = async () => {
       setIsGeocoding(true);
-      
+
       const newGeocodedStops = new Map(geocodedStops);
       let completed = 0;
 
       for (const stop of stopsNeedingGeocode) {
         // Check if it's a drive event
-        if (stop.type === 'drive' && stop.location.includes(' to ')) {
+        if (stop.type === "drive" && stop.location.includes(" to ")) {
           const driveResult = await geocodeDriveRoute(stop.location, mapboxToken);
-          
+
           if (driveResult && driveResult.startResult && driveResult.endResult) {
             // Use start location for the marker
             newGeocodedStops.set(stop.id, driveResult.startResult.coordinates);
-            
+
             // Store drive route with both start and end
             const newDriveRoutes = new Map(geocodedDriveRoutes);
             newDriveRoutes.set(stop.id, {
               start: driveResult.startResult.coordinates,
-              end: driveResult.endResult.coordinates
+              end: driveResult.endResult.coordinates,
             });
             setGeocodedDriveRoutes(newDriveRoutes);
-            
+
             // Notify with both start and end coordinates
             onCoordinatesGeocoded?.(stop.id, driveResult.startResult.coordinates, driveResult.endResult.coordinates);
           }
         } else {
           // Regular geocoding for non-drive events
           const locationsToGeocode = [stop.location];
-          const results = await geocodeMultipleLocations(
-            locationsToGeocode, 
-            mapboxToken
-          );
-          
+          const results = await geocodeMultipleLocations(locationsToGeocode, mapboxToken);
+
           const result = results.get(stop.location);
           if (result) {
             newGeocodedStops.set(stop.id, result.coordinates);
@@ -84,9 +82,9 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
 
         completed++;
         setGeocodingProgress({ completed, total: stopsNeedingGeocode.length });
-        
+
         // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       setGeocodedStops(newGeocodedStops);
@@ -106,7 +104,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
     try {
       // Calculate bounds
       const bounds = new mapboxgl.LngLatBounds();
-      allStopsWithCoordinates.forEach(stop => {
+      allStopsWithCoordinates.forEach((stop) => {
         if (stop.coordinates) {
           bounds.extend(stop.coordinates as [number, number]);
         }
@@ -117,7 +115,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/streets-v12",
         bounds: bounds,
-        fitBoundsOptions: { padding: 50 }
+        fitBoundsOptions: { padding: 50 },
       });
 
       // Add navigation controls
@@ -125,7 +123,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
         new mapboxgl.NavigationControl({
           visualizePitch: true,
         }),
-        "top-right"
+        "top-right",
       );
 
       map.current.on("load", () => {
@@ -133,9 +131,9 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
 
         // Build route coordinates using start/end points for drives
         const routeCoordinates: [number, number][] = [];
-        
+
         allStopsWithCoordinates.forEach((stop) => {
-          if (stop.type === 'drive') {
+          if (stop.type === "drive") {
             const driveRoute = geocodedDriveRoutes.get(stop.id);
             if (driveRoute) {
               routeCoordinates.push(driveRoute.start);
@@ -161,9 +159,9 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
               properties: {},
               geometry: {
                 type: "LineString",
-                coordinates: routeCoordinates
-              }
-            }
+                coordinates: routeCoordinates,
+              },
+            },
           });
 
           map.current.addLayer({
@@ -172,13 +170,13 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
             source: "route",
             layout: {
               "line-join": "round",
-              "line-cap": "round"
+              "line-cap": "round",
             },
             paint: {
               "line-color": "hsl(201, 85%, 52%)",
               "line-width": 4,
-              "line-opacity": 0.8
-            }
+              "line-opacity": 0.8,
+            },
           });
         }
 
@@ -199,7 +197,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
           el.style.cursor = "pointer";
           el.style.transition = "all 0.2s";
           el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
-          
+
           if (stop.type === "drive") {
             el.style.backgroundColor = "hsl(201, 85%, 52%)";
             el.style.color = "white";
@@ -230,15 +228,15 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
             }
           });
 
-          let popupContent = '';
-          if (stop.type === 'drive') {
-            const startLoc = stop.startLocation || stop.location.split(' to ')[0];
-            const endLoc = stop.endLocation || stop.location.split(' to ')[1];
+          let popupContent = "";
+          if (stop.type === "drive") {
+            const startLoc = stop.startLocation || stop.location.split(" to ")[0];
+            const endLoc = stop.endLocation || stop.location.split(" to ")[1];
             popupContent = `
               <div style="padding: 8px;">
                 <h3 style="font-weight: 600; margin-bottom: 4px;">📍 ${startLoc} → ${endLoc}</h3>
                 <p style="font-size: 12px; color: #666; margin-bottom: 4px;">${stop.time}</p>
-                ${stop.drivingTime ? `<p style="font-size: 12px; color: #0891b2; margin-bottom: 4px;">🚗 ${stop.drivingTime}</p>` : ''}
+                ${stop.drivingTime ? `<p style="font-size: 12px; color: #0891b2; margin-bottom: 4px;">🚗 ${stop.drivingTime}</p>` : ""}
                 ${stop.notes ? `<p style="font-size: 12px; color: #888;">${stop.notes}</p>` : ""}
               </div>
             `;
@@ -279,7 +277,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
   useEffect(() => {
     if (!highlightedStopId || !markers.current[highlightedStopId]) return;
 
-    Object.keys(markers.current).forEach(stopId => {
+    Object.keys(markers.current).forEach((stopId) => {
       const marker = markers.current[stopId];
       const el = marker.getElement();
       if (stopId === highlightedStopId) {
@@ -300,9 +298,7 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
             <MapPin className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">No Locations Yet</h3>
-          <p className="text-sm text-muted-foreground">
-            Add stops to your trip to see them on the map
-          </p>
+          <p className="text-sm text-muted-foreground">Add stops to your trip to see them on the map</p>
         </div>
       </div>
     );
