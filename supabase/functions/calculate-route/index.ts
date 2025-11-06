@@ -1,31 +1,26 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const MAPBOX_TOKEN = Deno.env.get('MAPBOX_TOKEN');
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { startLocation, endLocation, mapboxToken } = await req.json();
+    const { startLocation, endLocation } = await req.json();
 
     if (!startLocation || !endLocation) {
       return new Response(
-        JSON.stringify({ error: "Start and end locations are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Start and end locations are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const MAPBOX_TOKEN = mapboxToken || Deno.env.get("MAPBOX_ACCESS_TOKEN");
     
     if (!MAPBOX_TOKEN) {
       return new Response(
-        JSON.stringify({ error: "Mapbox token not provided" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Mapbox token not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

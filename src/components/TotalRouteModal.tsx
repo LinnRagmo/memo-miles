@@ -4,10 +4,9 @@ import { X, MapPin } from "lucide-react";
 import { Trip } from "@/types/trip";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { geocodeMultipleLocations, geocodeDriveRoute, getRouteGeometry } from "@/lib/geocoding";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TotalRouteModalProps {
   trip: Trip;
@@ -20,35 +19,37 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
-  const [mapboxToken, setMapboxToken] = useState<string>(() => {
-    return localStorage.getItem("mapboxToken") || "";
-  });
-  const [tokenInput, setTokenInput] = useState("");
+  const [mapboxToken, setMapboxToken] = useState<string>("");
   const [isMapLoading, setIsMapLoading] = useState(true);
   const [geocodedStops, setGeocodedStops] = useState<Map<string, [number, number]>>(new Map());
   const [geocodedDriveRoutes, setGeocodedDriveRoutes] = useState<Map<string, { start: [number, number], end: [number, number] }>>(new Map());
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const [tokenError, setTokenError] = useState(false);
   const [routeGeometries, setRouteGeometries] = useState<any[]>([]);
   const [isFetchingRoutes, setIsFetchingRoutes] = useState(false);
   const { toast } = useToast();
 
-  const handleTokenSubmit = () => {
-    if (!tokenInput.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid Mapbox token",
-        variant: "destructive",
-      });
-      return;
+  // Fetch Mapbox token automatically
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (error) throw error;
+        if (data?.token) {
+          setMapboxToken(data.token);
+        }
+      } catch (error) {
+        console.error('Failed to fetch Mapbox token:', error);
+        toast({
+          title: "Map Error",
+          description: "Failed to load map configuration",
+          variant: "destructive",
+        });
+      }
+    };
+    if (isOpen) {
+      fetchToken();
     }
-    localStorage.setItem("mapboxToken", tokenInput.trim());
-    setMapboxToken(tokenInput.trim());
-    toast({
-      title: "Success",
-      description: "Mapbox token saved successfully",
-    });
-  };
+  }, [isOpen, toast]);
 
   // Geocode stops without coordinates
   useEffect(() => {
@@ -239,10 +240,9 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
 
       map.current.on('error', (e) => {
         console.error('Mapbox error:', e);
-        setTokenError(true);
         toast({
           title: "Map Error",
-          description: "Failed to load map. Please check your Mapbox token is valid.",
+          description: "Failed to load map. Please check your configuration.",
           variant: "destructive",
         });
         setIsMapLoading(false);
@@ -416,20 +416,6 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {mapboxToken && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7"
-                  onClick={() => {
-                    setMapboxToken("");
-                    setTokenError(false);
-                    localStorage.removeItem("mapboxToken");
-                  }}
-                >
-                  Change Token
-                </Button>
-              )}
               <button
                 onClick={onClose}
                 className="rounded-lg p-1.5 hover:bg-muted transition-colors"
@@ -441,35 +427,7 @@ const TotalRouteModal = ({ trip, isOpen, onClose, onCoordinatesGeocoded }: Total
         </DialogHeader>
 
         <div className="flex-1 relative">
-          {!mapboxToken || tokenError ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted/20 p-8">
-              <div className="max-w-md w-full bg-card p-6 rounded-lg shadow-lg border border-border">
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Mapbox Token Required</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  To display the route map, please enter your Mapbox public token. You can find it at{" "}
-                  <a
-                    href="https://account.mapbox.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    mapbox.com
-                  </a>
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    placeholder="pk.ey..."
-                    value={tokenInput}
-                    onChange={(e) => setTokenInput(e.target.value)}
-                    className="flex-1"
-                    onKeyDown={(e) => e.key === "Enter" && handleTokenSubmit()}
-                  />
-                  <Button onClick={handleTokenSubmit}>Save</Button>
-                </div>
-              </div>
-            </div>
-          ) : allStops.length === 0 ? (
+          {allStops.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
               <div className="text-center p-8">
                 <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

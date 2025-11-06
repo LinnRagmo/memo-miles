@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Stop } from "@/types/trip";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MapPin, Navigation, Key } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { MapPin, Navigation } from "lucide-react";
 import { geocodeMultipleLocations, geocodeDriveRoute } from "@/lib/geocoding";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MapViewProps {
   stops: Stop[];
@@ -24,6 +23,22 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
   const [geocodedDriveRoutes, setGeocodedDriveRoutes] = useState<Map<string, { start: [number, number], end: [number, number] }>>(new Map());
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodingProgress, setGeocodingProgress] = useState({ completed: 0, total: 0 });
+
+  // Fetch Mapbox token automatically
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (error) throw error;
+        if (data?.token) {
+          setMapboxToken(data.token);
+        }
+      } catch (error) {
+        console.error('Failed to fetch Mapbox token:', error);
+      }
+    };
+    fetchToken();
+  }, []);
 
   // Combine stops with coordinates and geocoded coordinates
   const allStopsWithCoordinates = stops.map(stop => ({
@@ -302,57 +317,6 @@ const MapView = ({ stops, onStopClick, highlightedStopId, onCoordinatesGeocoded 
           <h3 className="text-lg font-semibold text-foreground mb-2">No Locations Yet</h3>
           <p className="text-sm text-muted-foreground">
             Add stops to your trip to see them on the map
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!mapboxToken) {
-    return (
-      <div className="h-full w-full bg-gradient-to-br from-primary/5 via-accent/5 to-muted/20 flex items-center justify-center p-8">
-        <div className="bg-card/95 backdrop-blur-sm rounded-lg shadow-medium p-8 max-w-md border border-border">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Key className="w-8 h-8 text-primary" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Mapbox Access Token Required</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Enter your Mapbox public token to display the interactive map with pins and routes.
-          </p>
-          <p className="text-xs text-muted-foreground mb-4">
-            Get your free token at{" "}
-            <a
-              href="https://account.mapbox.com/access-tokens/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              mapbox.com
-            </a>
-          </p>
-          <div className="space-y-3">
-            <Input
-              type="password"
-              placeholder="pk.eyJ1IjoieW91cnVzZXJuYW1lIi..."
-              value={mapboxToken}
-              onChange={(e) => setMapboxToken(e.target.value)}
-              className="font-mono text-sm"
-            />
-            <Button
-              onClick={() => {
-                if (mapboxToken) {
-                  // Token will be used in the useEffect
-                }
-              }}
-              className="w-full"
-              disabled={!mapboxToken}
-            >
-              <Navigation className="w-4 h-4 mr-2" />
-              Load Map
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border">
-            💡 For production use, connect to <strong>Lovable Cloud</strong> to securely store your API keys
           </p>
         </div>
       </div>

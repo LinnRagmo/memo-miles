@@ -137,7 +137,6 @@ export async function getRouteGeometry(
         body: {
           startLocation,
           endLocation,
-          mapboxToken,
         },
       }
     );
