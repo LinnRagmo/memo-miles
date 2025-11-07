@@ -72,8 +72,8 @@ const AddEventForm = ({ onAddEvent, onCancel }: AddEventFormProps) => {
 
     // For drive type, use hard-coded values
     if (type === "drive") {
-      const hardCodedDrivingTime = "3h 15 min";
-      const hardCodedDistance = "2190 km";
+      const hardCodedDrivingTime = "5h 39 min";
+      const hardCodedDistance = "596 km";
 
       eventData = {
         ...eventData,
